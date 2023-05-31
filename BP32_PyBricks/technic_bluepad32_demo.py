@@ -5,7 +5,7 @@ from pybricks.parameters import Button, Color, Direction, Port, Side, Stop
 from pybricks.robotics import DriveBase
 from pybricks.tools import wait, StopWatch
 import ustruct
-
+servos=[0,0,0,0]
 p=PUPDevice(Port.A)
 
 def read_gamepad():
@@ -20,6 +20,10 @@ def led(nr,r,g,b):
 
 def showled():
     p.write(0,(0,0,0,0,0,0,0,0,65,0,0,0))
+
+def servo(nr,pos):
+    servos[nr]=pos
+    p.write(0,(servos[0],0,servos[1],0,servos[2],0,servos[3],0,0,0,0,0))
 
 
 while True:
