@@ -26,23 +26,23 @@ This is a firmware that supported BluePad32. Furthermore, the following commands
 
 Check whether a gamepad is connected. Returns 1 when connected
 
-**'ur.call('gamepad')`**
+**`ur.call('gamepad')`**
 
 Returns the status of the gamepad with 6 parameters: `myGamepad->buttons(),myGamepad->dpad(),myGamepad->axisX(),myGamepad->axisY(),myGamepad->axisRX(),myGamepad->axisRY())`
 
-**'ur.call('btaddress','B',idx)`**
+**`ur.call('btaddress','B',idx)`**
 
 Returns the Bluetooth address of the controller connected as index `idx` as a string in the format `'AA:BB:CC:11:22:33'`
 
-**'ur.call('btdisconnect','B',idx)`**
+**`ur.call('btdisconnect','B',idx)`**
 
 Disconnectes the controller connect to index `idx`.
 
-**'ur.call('btallow','17s',bluetooth_address)`**
+**`ur.call('btallow','17s',bluetooth_address)`**
 
 Confgures the bluetooth address `bluetooth_address` (given as a string in the format `'AA:BB:CC:11:22:33'`) to be used as a filter for controllers to be connected. Dependoing on the `btfilter` setting, the filter will be active.
 
-**'ur.call('btfilter','B',filter_active)`**
+**`ur.call('btfilter','B',filter_active)`**
 
 Activaes the bluetooth filter. Values are `0` (not active) or `1` (active). 
 
@@ -68,4 +68,4 @@ Initates NeoPixel with `number_leds` leds on Pin `pin`.
 
 **`ur.call('servo','>Bi',servo_nr,angle)`**
 
-Sets servo number `servo_nr` to position `pos`. Mapping is servo 1,2,3, and 4 on pins 21,22,23, and 25. The possible `angle` is usually between `0` and `180`.
+Sets servo number `servo_nr` to position `pos`. Mapping is servo 1, 2, 3, and 4 on pins 21, 22, 23, and 25. The possible `angle` is usually between `0` and `180`.
