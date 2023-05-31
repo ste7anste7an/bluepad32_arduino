@@ -17,7 +17,7 @@ There is a difference in the interpretation of `short` data type send by the LPF
 
 # Pre build firmware
 
-In the [firmware directory]("./Pre build Firmwares"), you will find the latest versions of the pre-build firmware for both LPF2 (for both PyBricks and official Lego) and UartRemote versions of BluePad32.
+In the [firmware directory](./Pre build Firmwares), you will find the latest versions of the pre-build firmware for both LPF2 (for both PyBricks and official Lego) and UartRemote versions of BluePad32.
 
 # Setting up BluePad32 for Arduino
 This projects heavely leans on the superb [BluePad32 library](). BluePad32 runs on a seperate core and deals with all the special Bluetooth protocols for a wide collection game controllers and aims to unify their capabaility on a generic GameController object. Lately, the BluePad32 library became available as a special hardware Component in the Arduino IDE environment. This makes integration with other Arduino libraries very easy (such as Servo and NeoPixel libraries).
