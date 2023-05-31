@@ -1,4 +1,4 @@
-# Implemented UartRemote commands in the BluePad32_UartRemote firmware
+# Implemented UartRemote commands in BluePad32_UartRemote
 
 This is a firmware that supported BluePad32. Furthermore, the following commands are integrated in the firmware:
 
