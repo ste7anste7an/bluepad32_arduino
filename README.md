@@ -5,7 +5,7 @@ This repository contains two versions of the BluePad32 for running on the LMS-ES
 ## BluePad32_UartRemote
 
 This firmware uses the UartRemote protocol to communicate between the BluePad32 module and a Lego robot (such as Lego SPIKE prime, Lego Robotic Inventor or Lego EV3). This version has more functions compared to the LPF2 version. We added functions to request the BlueTooth adress of the currently connected Game Controller. Furthermore, some functions are added to whitelist specific Bluetooth addresses that are allowed to connect to the  BluePad32 firmware. This facilitates the connection in an enviroment where there are multiple Controllers and multiple LMS-ESP32 boards.
-Look in the BluePad32_UartRemote directory for the implemented UartRemote commands in this firmware.
+Look in the [BluePad32_UartRemote directory](./Bluepad32_UartRemote) for the implemented UartRemote commands in this firmware.
 
 ## BluePad32_LPF2
 
