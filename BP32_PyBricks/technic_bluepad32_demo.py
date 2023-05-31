@@ -34,7 +34,7 @@ while True:
         showled()
         print(read_gamepad())
         wait(20)    
-    for l in range(5,1,-1):
+    for l in range(4,0,-1):
         for i in range(6):
             led(i,0,0,0)
             #wait(2)
