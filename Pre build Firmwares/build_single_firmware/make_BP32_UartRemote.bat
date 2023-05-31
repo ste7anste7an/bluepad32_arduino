@@ -1,0 +1,1 @@
+esptool.exe --chip esp32 merge_bin  --flash_mode dio --flash_freq 80m --flash_size 4MB  0x1000 Bluepad32_UartRemote.ino.bootloader.bin 0x8000 Bluepad32_UartRemote.ino.partitions.bin 0xe000 boot_app0.bin 0x10000 Bluepad32_UartRemote.bin -o ../firmware_BP32_UartRemote.bin

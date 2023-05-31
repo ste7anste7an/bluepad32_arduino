@@ -15,12 +15,12 @@ while True:
  */
 
 
-
-
+// uncomment the following line if building for PyBricks
+// #define PYBRICKS 1
 
 
 #include <Bluepad32.h>
-#include "uni_hid_device.h"
+//#include "uni_hid_device.h"
 #include <stdio.h>
 
 #include <LPF2.h>
@@ -271,8 +271,11 @@ byte nr_short=int(s/2);
   // Arduino setup function. Runs in CPU 1
   void setup() {
     Serial.begin(115200);
-    //sensor.create_mode("GAMEPAD", true, DATA8, 12, 5, 0,0.0f,512.0f,0.0f,1024.0f,0.0f,100.0f,"RAW",ABSOLUTE,ABSOLUTE); //map in and map out unit = "XYBD" = x, y, buttons, d-pad
-    sensor.create_mode("GAMEPAD", true, DATA16, 6, 5, 0,0.0f,512.0f,0.0f,1024.0f,0.0f,512.0f,"XYBD",0,ABSOLUTE); //map in and map out unit = "XYBD" = x, y, buttons, d-pad
+    #ifdef PYBRICKS
+    sensor.create_mode("GAMEPAD", true, DATA16, 12, 5, 0,0.0f,512.0f,0.0f,1024.0f,0.0f,100.0f,"RAW",ABSOLUTE,ABSOLUTE); //map in and map out unit = "XYBD" = x, y, buttons, d-pad
+    #else
+    sensor.create_mode("GAMEPAD", true, DATA16, 6, 5, 0,0.0f,512.0f,0.0f,1024.0f,0.0f,512.0f,"XYBD",ABSOLUTE,ABSOLUTE); //map in and map out unit = "XYBD" = x, y, buttons, d-pad
+    #endif
     
     sensor.get_mode(0)->setCallback(servo_neo_callback);  // attach call back function to mode 0
    
