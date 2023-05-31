@@ -31,17 +31,17 @@ def servo(nr,pos):
     p.write(0,(servos[0],0,servos[1],0,servos[2],0,servos[3],0,0,0,0,0))
 
 s=StopWatch()
-initled(6,12)
+initled(6,12) # we use 6 neopixels connected to pin 12
 while True:
     s.reset()
     for l in range(6):
-        clearleds()
-        led(l,30,0,0)
+        clearleds()     # clear all leds
+        led(l,30,0,0)   # set led <l> to (r,g,b)=(30,0,0)
         showleds()
         wait(20)    
     for l in range(4,0,-1):
-        clearleds()
-        led(l,30,0,0)
+        clearleds()     # clear all leds
+        led(l,30,0,0)   # set led <l> to (r,g,b)=(30,0,0)
         showleds()
         wait(20)
     print(s.time())
