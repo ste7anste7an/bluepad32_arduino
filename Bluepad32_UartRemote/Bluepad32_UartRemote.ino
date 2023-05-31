@@ -7,8 +7,9 @@
 #include <Adafruit_NeoPixel.h>
 #include <ESP32Servo.h>
 
+#define MAX_GAMEPADS 1
 // storage for gamepads
-GamepadPtr myGamepads[BP32_MAX_GAMEPADS];
+GamepadPtr myGamepads[MAX_GAMEPADS];
 
 // initialize uartremote
 UartRemote uartremote;
@@ -43,7 +44,7 @@ int maxUs = 2000;
 // Up to 4 gamepads can be connected at the same time.
 void onConnectedGamepad(GamepadPtr gp) {
   bool foundEmptySlot = false;
-  for (int i = 0; i < BP32_MAX_GAMEPADS; i++) {
+  for (int i = 0; i < MAX_GAMEPADS; i++) {
     if (myGamepads[i] == nullptr && !foundEmptySlot) {
       Serial.printf("CALLBACK: Gamepad is connected, index=%d\n", i);
       // Additionally, you can get certain gamepad properties like:
@@ -85,7 +86,7 @@ void onConnectedGamepad(GamepadPtr gp) {
 void onDisconnectedGamepad(GamepadPtr gp) {
   bool foundGamepad = false;
 
-  for (int i = 0; i < BP32_MAX_GAMEPADS; i++) {
+  for (int i = 0; i < MAX_GAMEPADS; i++) {
     if (myGamepads[i] == gp) {
       Serial.printf("CALLBACK: Gamepad is disconnected from index=%d\n", i);
       myGamepads[i] = nullptr;
@@ -116,7 +117,7 @@ void setdebug(Arguments args) {
 }
 
 void connected(Arguments args) {
-  for (int i = 0; i < BP32_MAX_GAMEPADS; i++) {
+  for (int i = 0; i < MAX_GAMEPADS; i++) {
     GamepadPtr myGamepad = myGamepads[i];
     if (myGamepad && myGamepad->isConnected()) {
       uartremote.send_command("connectedack", "B", 1);
@@ -133,7 +134,7 @@ void connected(Arguments args) {
 void btaddress(Arguments args) {
   uint8_t idx;
   unpack(args, &idx);
-  if ((idx >= 0) && (idx < BP32_MAX_GAMEPADS)) {
+  if ((idx >= 0) && (idx < MAX_GAMEPADS)) {
     if (myGamepads[idx] != nullptr) { // check whether the gamepad entry exists
       GamepadPtr myGamepad = myGamepads[idx];
       GamepadProperties properties = myGamepad->getProperties();
@@ -157,7 +158,7 @@ void btaddress(Arguments args) {
 void btdisconnect(Arguments args) {
   uint8_t idx;
   unpack(args, &idx);
-  if ((idx >= 0) && (idx < BP32_MAX_GAMEPADS)) {
+  if ((idx >= 0) && (idx < MAX_GAMEPADS)) {
     if (myGamepads[idx] != nullptr) {
       GamepadPtr myGamepad = myGamepads[idx];
       myGamepad->disconnect();
@@ -211,7 +212,7 @@ void btfilter(Arguments args) {
    (left_x,left_y,right_x,right_y,keys,dpad)=readings
 */
 void gamepad(Arguments args) {
-  for (int i = 0; i < BP32_MAX_GAMEPADS; i++) {
+  for (int i = 0; i < MAX_GAMEPADS; i++) {
     GamepadPtr myGamepad = myGamepads[i];
     if (myGamepad && myGamepad->isConnected()) {
       uartremote.send_command("gamepadack", "2H4h", myGamepad->buttons(), myGamepad->dpad(),
@@ -228,7 +229,7 @@ void gamepad(Arguments args) {
 // This does not seem to work
 
 void imu(Arguments args) {
-  for (int i = 0; i < BP32_MAX_GAMEPADS; i++) {
+  for (int i = 0; i < MAX_GAMEPADS; i++) {
     GamepadPtr myGamepad = myGamepads[i];
     if (myGamepad && myGamepad->isConnected()) {
       uartremote.send_command("imuack", "6I",
@@ -471,7 +472,7 @@ void loop() {
   // miscButtons() which return a bitmask.
   // Some gamepads also have DPAD, axis and more.
   if ((debug & 2) == 2) { // more verbose
-    for (int i = 0; i < BP32_MAX_GAMEPADS; i++) {
+    for (int i = 0; i < MAX_GAMEPADS; i++) {
       GamepadPtr myGamepad = myGamepads[i];
       if (myGamepad && myGamepad->isConnected()) {
         Serial.printf(
