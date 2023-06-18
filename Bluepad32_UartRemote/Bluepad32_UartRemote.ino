@@ -410,7 +410,7 @@ void setup() {
   uartremote.add_command("btaddress", &btaddress);
   uartremote.add_command("btdisconnect", &btdisconnect);
   uartremote.add_command("btallow", &btallow);
-  uartremote.add_command("btforget", &btallow);
+  uartremote.add_command("btforget", &btforget);
   uartremote.add_command("btfilter", &btfilter);
   uartremote.add_command("gamepad", &gamepad);
   uartremote.add_command("imu", &imu);
