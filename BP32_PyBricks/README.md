@@ -22,12 +22,13 @@ For output the following fields are defined:
 |byte 1, byte 2 | Servo 1 | |
 |byte 3, byte 4 | Servo 2 | |
 |byte 5, byte 6 | Servo 3 | |
-|byte 7, byte 8 | led_val0| 0< led nr < 64 *|
+|byte 7, byte 8 | led_val0| 0< led nr < 64|
 |byte 9, byte 10 | led_val1|  0 <= red < 256 |
 |byte 11, byte 12 | led_val2| 0 <=  green < 256|
 |byte 13, byte 14 | led_val3| 0 <=  blue < 256|
 
-* The `led_val0` fields is special. 
+The `led_val0` fields has special function:
+
 | value of `led_val0` | explanation |
 |---------------------|-------------|
 | 65		      | write NeoPixel values to leds, led_val1, 2 and 3 no meaning |
