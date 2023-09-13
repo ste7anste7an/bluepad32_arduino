@@ -16,7 +16,7 @@ while True:
 
 
 // uncomment the following line if building for PyBricks
-// #define PYBRICKS 1
+#define PYBRICKS 1
 
 
 #include <Bluepad32.h>
@@ -223,26 +223,26 @@ byte nr_short=int(s/2);
   // Serial.printf("size %d, nr short %d\n",s,nr_short);
   for (int i=0; i<nr_short; i++) {
     vals[i]=buf[i*2]+buf[i*2+1]*256; // in Block SPIKE language only up to 128 can be used:  vals[i]=buf[i*2]+buf[i*2+1]*128; 
-    Serial.printf("vals[%d]=%d\n",i,vals[i]);
+    // Serial.printf("vals[%d]=%d\n",i,vals[i]);
   }
 
-   Serial.printf("servo %d %d %d %d\n",vals[0],vals[1],vals[2],vals[3]);
+  // Serial.printf("servo %d %d %d %d\n",vals[0],vals[1],vals[2],vals[3]);
   servo1.write(vals[0]);
   servo2.write(vals[1]);
   servo3.write(vals[2]);
   servo4.write(vals[3]);
  
-  if (buf[8]==65) { // write led
+  if (vals[4]==65) { // write led
      strip->show();
-  } else if (buf[8]==66) { // init led
+  } else if (vals[4]==66) { // init led
      delete strip;
-     strip=new Adafruit_NeoPixel(buf[9],buf[10]); //nr_leds, pin
-  } else if (buf[8]==67) { // clear all leds led
+     strip=new Adafruit_NeoPixel(vals[5],vals[6]); //nr_leds, pin
+  } else if (vals[4]==67) { // clear all leds led
       for (int i=0; i<strip->numPixels(); i++ ) {
         strip->setPixelColor(i,0,0,0);
       }
   } else {
-      strip->setPixelColor(buf[8],buf[9],buf[10],buf[11]);
+      strip->setPixelColor(vals[4],vals[5],vals[6],vals[7]);
   }
 
 }
@@ -272,7 +272,7 @@ byte nr_short=int(s/2);
   void setup() {
     Serial.begin(115200);
     #ifdef PYBRICKS
-    sensor.create_mode("GAMEPAD", true, DATA16, 12, 5, 0,0.0f,512.0f,0.0f,1024.0f,0.0f,100.0f,"RAW",ABSOLUTE,ABSOLUTE); //map in and map out unit = "XYBD" = x, y, buttons, d-pad
+    sensor.create_mode("GP32", true, DATA8, 16, 5, 0,0.0f,512.0f,0.0f,1024.0f,0.0f,100.0f,"RAW",ABSOLUTE,ABSOLUTE); //map in and map out unit = "XYBD" = x, y, buttons, d-pad
     #else
     sensor.create_mode("GAMEPAD", true, DATA16, 6, 5, 0,0.0f,512.0f,0.0f,1024.0f,0.0f,512.0f,"XYBD",ABSOLUTE,ABSOLUTE); //map in and map out unit = "XYBD" = x, y, buttons, d-pad
     #endif
@@ -336,23 +336,39 @@ unsigned long last_reading = 0;
       int mode=sensor.get_current_mode();
       if (mode==0) {
        
-        short bb[8];
+        byte bb[16];
  //for (int i = 0; i < BP32_MAX_GAMEPADS; i++) {
     GamepadPtr myGamepad = myGamepads[0];
  
         if (myGamepad && myGamepad->isConnected()) {
           //myGamepad->buttons(),myGamepad->dpad(),
-          bb[0]=myGamepad->axisX();
-          bb[1]=myGamepad->axisY();
-          bb[2]=myGamepad->axisRX();
-          bb[3]=myGamepad->axisRY();
-          bb[4]=myGamepad->buttons();
-          bb[5]=myGamepad->dpad();
-          bb[6]=0;
-          bb[7]=0;
+          bb[0]=(myGamepad->axisX())&0xff;
+          bb[1]=(myGamepad->axisX())>>8;
+          bb[2]=(myGamepad->axisY())&0xff;
+          bb[3]=(myGamepad->axisY())>>8;
+          bb[4]=(myGamepad->axisRX())&0xff;
+          bb[5]=(myGamepad->axisRX())>>8;
+          bb[6]=(myGamepad->axisRY())&0xff;
+          bb[7]=(myGamepad->axisRY())>>8;
+          bb[8]=(myGamepad->buttons())&0xff;
+          bb[9]=(myGamepad->buttons())>>8;
+          bb[10]=(myGamepad->dpad())&0xff;
+          bb[11]=(myGamepad->dpad())>>8;
+          bb[12]=0;
+          bb[13]=0;
+          bb[14]=0;
+          bb[15]=0;
+          
           //Serial.printf("gp:%d %d \n", bb[4],bb[5]);
+
+/*
+ * 
+ * 
+ */
+
+          
         }
-        sensor.send_data16(bb,8);
+        sensor.send_data8(bb,16);
         } 
       
       
