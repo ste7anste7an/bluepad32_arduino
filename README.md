@@ -58,6 +58,9 @@ This project heavily leans on the superb [BluePad32 library](). BluePad32 runs o
 
 1. Follow the instructions for setting up the required Arduino environment in the [BluePad32 Arduino documentation](https://github.com/ricardoquesada/bluepad32/blob/main/docs/plat_arduino.md).
 
-2. Install the LEGO® Arduino Libraries from this repository. This project depends on two other libraries: the Adafruit_Neopixel and the ESP32Servo library. Both are in the 'Lego Arduino Libraries' folder in this repository. In the Arduino IDE, choose Add Library -> Install from Zip file, and select the zip file of the specific library. 
+2. Install the LEGO® Arduino Libraries from this repository. This project depends on two other libraries: the Adafruit_Neopixel and the ESP32Servo library. Both are in the 'Lego Arduino Libraries' folder in this repository. In the Arduino IDE, choose `Sketch > Include Library > Add .ZIP Library`, and select the zip file of the specific library. 
+
+![Adding a ZIP library](images/add_zip.png)
+
 
 
