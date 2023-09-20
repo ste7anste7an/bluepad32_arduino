@@ -25,7 +25,7 @@ def gamepad():
     if cur_mode==0:
         return p.call('gpled')
     elif cur_mode==1:
-        return p.call('gpsvr')
+        return p.call('gpsrv')
     else:
         return None
 
