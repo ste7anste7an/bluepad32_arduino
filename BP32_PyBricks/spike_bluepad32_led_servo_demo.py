@@ -1,24 +1,35 @@
-# Bluepad32 example for pybricks
+from pybricks.hubs import PrimeHub
+from pybricks.pupdevices import Motor, ColorSensor, UltrasonicSensor, ForceSensor
+from pybricks.parameters import Button, Color, Direction, Port, Side, Stop
+from pybricks.robotics import DriveBase
+from pybricks.tools import wait, StopWatch
 
-Flash the firmware on the ESP32 (use the firmware in this guthub), or go to [firmware.antonsmindstorms.com](https://firmware.antonsmindstorms.com) and choose `firmware_BluePad32_Pybricks`.
 
-## PUPRemote
-
-The BuePad32 LPF2 can be used directory from `PUPDevice` or using our [PUPRemote library](https://github.com/antonvh/PUPRemote). 
-
-```
+hub = PrimeHub()
 from pupremote import PUPRemoteHub
 p=PUPRemoteHub(Port.A)
 p.add_command('gpled','hhhhHH','16B')
 p.add_command('gpsrv','hhhhHH','8H')
 
 
-while True:
-  (gp_left_x,gp_left_y,gp_right_x,gp_right_y,buttons,dpad)=p.call('gpled')
-```
 
-for writing values to the servo's and LED's, use:
-```
+FILL = 0x10
+ZERO = 0x20
+SET  = 0x30
+CONFIG = 0x40
+WRITE = 0x80
+
+cur_mode=0
+
+def gamepad():
+    if cur_mode==0:
+        return p.call('gpled')
+    elif cur_mode==1:
+        return p.call('gpsvr')
+    else:
+        return None
+
+
 def neopixel_init(nr_leds,pin):
     global cur_mode
     leds=[0]*16
@@ -69,4 +80,24 @@ def servo(servo_nr,pos):
     cur_mode=1
     return r
 
-```
+
+
+neopixel_init(24,12) # set 24 pixel NeoPixel on pin GPIO12
+neopixel_fill(30,0,0)
+wait(300)
+neopixel_zero()
+wait(300)
+
+st=StopWatch()
+i=0
+for x in range(1000):
+    i+=1
+    i%=20
+    q=neopixel_set(i%5,3,[i,(i+6)%20,(i+12)%20]*3)
+    print(q)
+print(st.time())
+st=StopWatch()
+for x in range(1000):
+    q=servo(0,x%180)
+    print(q)
+print(st.time())
