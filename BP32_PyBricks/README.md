@@ -19,6 +19,13 @@ while True:
 
 for writing values to the servo's and LED's, use:
 ```
+FILL = 0x10
+ZERO = 0x20
+SET  = 0x30
+CONFIG = 0x40
+WRITE = 0x80
+
+cur_mode=0
 def neopixel_init(nr_leds,pin):
     global cur_mode
     leds=[0]*16
