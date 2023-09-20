@@ -273,6 +273,7 @@ byte nr_short=int(s/2);
     Serial.begin(115200);
     #ifdef PYBRICKS
     sensor.create_mode("GP32", true, DATA8, 16, 5, 0,0.0f,512.0f,0.0f,1024.0f,0.0f,100.0f,"RAW",ABSOLUTE,ABSOLUTE); //map in and map out unit = "XYBD" = x, y, buttons, d-pad
+    sensor.create_mode("GAMEPAD", true, DATA8, 16, 5, 0,0.0f,512.0f,0.0f,1024.0f,0.0f,512.0f,"XYBD",ABSOLUTE,ABSOLUTE); //map in and map out unit = "XYBD" = x, y, buttons, d-pad
     #else
     sensor.create_mode("GAMEPAD", true, DATA16, 6, 5, 0,0.0f,512.0f,0.0f,1024.0f,0.0f,512.0f,"XYBD",ABSOLUTE,ABSOLUTE); //map in and map out unit = "XYBD" = x, y, buttons, d-pad
     #endif
