@@ -228,9 +228,9 @@ void neopixel_callback(byte buf[], byte s) {
   byte num_pixels = strip->numPixels();
   byte cmd = buf[0] & 0x7f; // all but bit 7 (write) and strip lower 4 bits.
   byte write_leds = buf[0] & 0x80;
-  // Serial.printf("neopixel: cmd %02X write_leds %02X\r\n",cmd,write_leds);
-  //for (int i=0; i<s; i++) Serial.printf("%02X ",buf[i]);
-  //Serial.printf("\n");
+   Serial.printf("neopixel: cmd %02X write_leds %02X\r\n",cmd,write_leds);
+  for (int i=0; i<s; i++) Serial.printf("%02X ",buf[i]);
+  Serial.printf("\n");
   if (cmd == FILL) {
     for (int i = 0; i < num_pixels; i++ ) {
        strip->setPixelColor(i, buf[1], buf[2], buf[3]);
@@ -246,8 +246,8 @@ void neopixel_callback(byte buf[], byte s) {
     byte nr_leds =buf[1];
     byte start_led = buf[2];
     // Serial.printf("Neopixel SET %d %d num_pixels %d\r\n",nr_leds,start_led,num_pixels);
-    if ((nr_leds==0) or (nr_leds>4)) nr_leds=4;
-    if (start_led+nr_leds<=num_pixels) {
+    if (nr_leds==0) nr_leds=4;
+    if ((start_led<num_pixels) && (start_led+nr_leds<num_pixels)) {
       for (int i = 0; i < nr_leds; i++ ) {
        // Serial.printf("set_led: %d %d %d %d \r\n",i+start_led, buf[3+i*3], buf[4+i*3], buf[5+i*3]);
        strip->setPixelColor(i+start_led, buf[3+i*3], buf[4+i*3], buf[5+i*3]);
@@ -269,13 +269,13 @@ void neopixel_callback(byte buf[], byte s) {
 void servo_callback(byte buf[], byte s) {
   byte nr_short = int(s / 2);
   short vals[nr_short];
-  //Serial.printf("size %d, nr short %d\n",s,nr_short);
+  Serial.printf("size %d, nr short %d\n",s,nr_short);
   for (int i = 0; i < nr_short; i++) {
     vals[i] = buf[i * 2] + buf[i * 2 + 1] * 256; // in Block SPIKE language only up to 128 can be used:  vals[i]=buf[i*2]+buf[i*2+1]*128;
-    //Serial.printf("vals[%d]=%d\n",i,vals[i]);
+    Serial.printf("vals[%d]=%d\n",i,vals[i]);
   }
 
-  // Serial.printf("servo %d %d %d %d\n",vals[0],vals[1],vals[2],vals[3]);
+   Serial.printf("servo %d %d %d %d\n",vals[0],vals[1],vals[2],vals[3]);
   servo1.write(vals[0]);
   servo2.write(vals[1]);
   servo3.write(vals[2]);
@@ -286,8 +286,8 @@ void servo_callback(byte buf[], byte s) {
 void setup() {
   Serial.begin(115200);
 #ifdef PYBRICKS
-  sensor.create_mode("GPLED", true, DATA8, 16, 5, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "RAW", ABSOLUTE, ABSOLUTE); //map in and map out unit = "XYBD" = x, y, buttons, d-pad
-  sensor.create_mode("GPSRV", true, DATA8, 16, 5, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "XYBD", ABSOLUTE, ABSOLUTE); //map in and map out unit = "XYBD" = x, y, buttons, d-pad
+  sensor.create_mode("GPLED", true, DATA16, 8, 5, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "RAW", ABSOLUTE, 144); //map in and map out unit = "XYBD" = x, y, buttons, d-pad
+  sensor.create_mode("GPSRV", true, DATA16, 8, 5, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "XYBD", ABSOLUTE, 144); //map in and map out unit = "XYBD" = x, y, buttons, d-pad
 //  sensor.create_mode("GPIIC", true, DATA8, 16, 5, 0, 0.0f, 512.0f, 0.0f, 1024.0f, 0.0f, 512.0f, "XYBD", ABSOLUTE, ABSOLUTE); //map in and map out unit = "XYBD" = x, y, buttons, d-pad
 
 #else
@@ -360,29 +360,23 @@ void loop() {
     // for any mode gamepad fields are populated
     // if (mode == 0) {
 
-      byte bb[16];
+      short bb[16];
       memset(bb, 0, 16);
       //for (int i = 0; i < BP32_MAX_GAMEPADS; i++) {
       GamepadPtr myGamepad = myGamepads[0];
 
       if (myGamepad && myGamepad->isConnected()) {
         //myGamepad->buttons(),myGamepad->dpad(),
-        bb[0] = (myGamepad->axisX()) & 0xff;
-        bb[1] = (myGamepad->axisX()) >> 8;
-        bb[2] = (myGamepad->axisY()) & 0xff;
-        bb[3] = (myGamepad->axisY()) >> 8;
-        bb[4] = (myGamepad->axisRX()) & 0xff;
-        bb[5] = (myGamepad->axisRX()) >> 8;
-        bb[6] = (myGamepad->axisRY()) & 0xff;
-        bb[7] = (myGamepad->axisRY()) >> 8;
-        bb[8] = (myGamepad->buttons()) & 0xff;
-        bb[9] = (myGamepad->buttons()) >> 8;
-        bb[10] = (myGamepad->dpad()) & 0xff;
-        bb[11] = (myGamepad->dpad()) >> 8;
-
+        bb[0] = (myGamepad->axisX());
+        bb[1] = (myGamepad->axisY()) ;
+        bb[2] = (myGamepad->axisRX());
+        bb[3] = (myGamepad->axisRY());
+        bb[4] = (myGamepad->buttons());
+        bb[5] = (myGamepad->dpad()) ;
+        
       }
       int nr_bytes = sensor.get_mode(mode)->sample_size;
-      sensor.send_data8(bb, nr_bytes);
+      sensor.send_data16(bb, nr_bytes);
     
 
 
