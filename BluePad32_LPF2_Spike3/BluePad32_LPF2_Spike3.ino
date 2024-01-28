@@ -14,9 +14,12 @@
     print(outp)
 */
 
+#define MIN(a,b) (((a)<(b))?(a):(b))
+#define MAX(a,b) (((a)>(b))?(a):(b))
 
 // uncomment the following line if building for PyBricks
-#define PYBRICKS 1
+//#define PYBRICKS 1
+#define SPIKE3 1
 
 
 #include <Bluepad32.h>
@@ -31,7 +34,7 @@
 GamepadPtr myGamepads[BP32_MAX_GAMEPADS];
 #define RXD2 18
 #define TXD2 19
-EV3UARTEmulation sensor(RXD2, TXD2, 62, 115200);
+EV3UARTEmulation sensor(RXD2, TXD2, 0x3d, 115200); // light sensor 0x3d
 
 char bt_allow[6] = {0, 0, 0, 0, 0, 0};
 bool bt_filter = false;
@@ -285,9 +288,16 @@ void servo_callback(byte buf[], byte s) {
 // Arduino setup function. Runs in CPU 1
 void setup() {
   Serial.begin(115200);
-#ifdef PYBRICKS
-  sensor.create_mode("GPLED", true, DATA8, 16, 5, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "RAW", ABSOLUTE, ABSOLUTE); //map in and map out unit = "XYBD" = x, y, buttons, d-pad
-  sensor.create_mode("GPSRV", true, DATA8, 16, 5, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "XYBD", ABSOLUTE, ABSOLUTE); //map in and map out unit = "XYBD" = x, y, buttons, d-pad
+#ifdef SPIKE3
+  sensor.create_mode("POW", true, DATA16, 8, 4, 0, -100.0f, 100.0f, -100.0f,100.0f, -100.0f, 100.0f, "PCT", ABSOLUTE, ABSOLUTE); //map in and map out unit = "XYBD" = x, y, buttons, d-pad
+  sensor.create_mode("SPE", true, DATA32, 1, 4, 0, -100.0f, 100.0f, -100.0f,100.0f, -100.0f, 100.0f, "PCT", ABSOLUTE, ABSOLUTE); //map in and map out unit = "XYBD" = x, y, buttons, d-pad
+  sensor.create_mode("POS", true, DATA32, 1, 4, 0, -360.0f, 360.0f, -100.0f,100.0f, -360.0f, 360.0f, "PCT", ABSOLUTE, ABSOLUTE); //map in and map out unit = "XYBD" = x, y, buttons, d-pad
+  sensor.create_mode("APOS", true, DATA32, 1, 4, 0, -180.0f, 179.0f, -100.0f,100.0f, -180.0f, 179.0f, "PCT", ABSOLUTE, ABSOLUTE); //map in and map out unit = "XYBD" = x, y, buttons, d-pad
+
+
+//#ifdef PYBRICKS
+//  sensor.create_mode("GPLED", true, DATA8, 16, 5, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "RAW", ABSOLUTE, ABSOLUTE); //map in and map out unit = "XYBD" = x, y, buttons, d-pad
+//  sensor.create_mode("GPSRV", true, DATA8, 16, 5, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "XYBD", ABSOLUTE, ABSOLUTE); //map in and map out unit = "XYBD" = x, y, buttons, d-pad
 //  sensor.create_mode("GPIIC", true, DATA8, 16, 5, 0, 0.0f, 512.0f, 0.0f, 1024.0f, 0.0f, 512.0f, "XYBD", ABSOLUTE, ABSOLUTE); //map in and map out unit = "XYBD" = x, y, buttons, d-pad
 
 #else
@@ -314,10 +324,10 @@ void setup() {
   servo2.attach(servo2Pin, minUs, maxUs);
   servo3.attach(servo3Pin, minUs, maxUs);
   servo4.attach(servo4Pin, minUs, maxUs);
-
-  Serial.printf("Firmware: %s\n", BP32.firmwareVersion());
+  Serial.println("BluePad32 SPIKEv3, see https://github.com/antonvh/PUPRemote/blob/main/examples/bluepad/spike3/README.md");
+  Serial.printf("Firmware: %s\r\n", BP32.firmwareVersion());
   const uint8_t *addr = BP32.localBdAddress();
-  Serial.printf("BD Addr: %2X:%2X:%2X:%2X:%2X:%2X\n", addr[0], addr[1], addr[2],
+  Serial.printf("BD Addr: %2X:%2X:%2X:%2X:%2X:%2X\r\n", addr[0], addr[1], addr[2],
                 addr[3], addr[4], addr[5]);
 
   // Setup the Bluepad32 callbacks
@@ -334,6 +344,10 @@ void setup() {
   delay(200);
 
 
+}
+
+int clip(int n, int lower, int upper) {
+  return MAX(lower, MIN(n, upper));
 }
 
 int refresh_BP32 = 0;
@@ -360,14 +374,16 @@ void loop() {
     // for any mode gamepad fields are populated
     // if (mode == 0) {
 
-      byte bb[16];
+      short bb[16];
+      byte a,b;
       memset(bb, 0, 16);
       //for (int i = 0; i < BP32_MAX_GAMEPADS; i++) {
       GamepadPtr myGamepad = myGamepads[0];
 
       if (myGamepad && myGamepad->isConnected()) {
         //myGamepad->buttons(),myGamepad->dpad(),
-        bb[0] = (myGamepad->axisX()) & 0xff;
+        /*
+        bb[0] = ((myGamepad->axisX()) >> 1)& 0xff;
         bb[1] = (myGamepad->axisX()) >> 8;
         bb[2] = (myGamepad->axisY()) & 0xff;
         bb[3] = (myGamepad->axisY()) >> 8;
@@ -379,10 +395,30 @@ void loop() {
         bb[9] = (myGamepad->buttons()) >> 8;
         bb[10] = (myGamepad->dpad()) & 0xff;
         bb[11] = (myGamepad->dpad()) >> 8;
-
+*/
+        a = clip((myGamepad->axisX()+512),0,1023) >> 2;
+        b = clip((myGamepad->axisY()+512),0,1023) >>2;
+        bb[0]= a+b*256; 
+        a =  clip((myGamepad->axisRX()+512),0,1023)>>2;
+        b =  clip((myGamepad->axisRY()+512),0,1023)>>2;
+        bb[1] = a+b*256;
+        
+        a = (myGamepad->buttons()) & 0xff;
+        b = (myGamepad->dpad()) & 0xff;
+        bb[2]=a+b*256;
+        bb[3]=bb[0];
+        bb[4]=bb[1];
+        bb[5]=bb[2];
+        bb[6]=bb[0];
+        bb[7]=bb[1];
+        //for (int i=0; i<3; i++) {
+        //  Serial.printf("bb[%d]=%X\n",i,bb[i]);
+       // }
+        Serial.printf("\n");
       }
       int nr_bytes = sensor.get_mode(mode)->sample_size;
-      sensor.send_data8(bb, nr_bytes);
+      //sensor.send_data8(bb, nr_bytes);
+    sensor.send_data16((short*)bb, nr_bytes);
     
 
 
