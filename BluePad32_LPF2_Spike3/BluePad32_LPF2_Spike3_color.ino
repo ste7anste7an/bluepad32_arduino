@@ -20,7 +20,7 @@
 // uncomment the following line if building for PyBricks
 //#define PYBRICKS 1
 #define SPIKE3 1
-#define EEPROM_SIZE 100
+
 //#include <WebServer.h>
 //#include <ESPmDNS.h>
 //#include <WebConfig.h>
@@ -28,6 +28,7 @@
 
 
 #include <Bluepad32.h>
+// see https://github.com/ricardoquesada/bluepad32/blob/main/docs/plat_arduino.md
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -36,19 +37,24 @@
 #include <LPF2.h>
 #include <Wire.h>
 #include <Adafruit_NeoPixel.h>
+// v1.12.0 can be installed via library manager
 
 GamepadPtr myGamepads[BP32_MAX_GAMEPADS];
 #define RXD2 18
 #define TXD2 19
 #define COLOR_MATRIX 0x40
 #define COLOR_SENSOR 0x3D
+#define DEFAULT_SENSOR COLOR_SENSOR
 #include <EEPROM.h>
-
 #define EEPROM_SIZE 100
+
 
 #include <CmdBuffer.hpp>
 #include <CmdCallback.hpp>
 #include <CmdParser.hpp>
+// https://github.com/ricardoquesada/bluepad32/blob/main/docs/plat_arduino.md
+// CmdParser v1.7
+// can be installed via library manager
 
 CmdCallback<10> cmdCallback;
 
@@ -258,7 +264,7 @@ void functHelp(CmdParser *myParser) {
 }
 
 void functSave(CmdParser *myParser) {
-  if (response) Serial.println("Receive Save");
+  if (response) Serial.println("Received Save");
   EEPROM.put(0, sensor_conf);
   EEPROM.commit();
   Serial.println("OK");
@@ -267,9 +273,9 @@ void functSave(CmdParser *myParser) {
 void functDefault(CmdParser *myParser) {
   if (response) Serial.println("Receive Default");
   strcpy(sensor_conf.magic, "LMSESP");
-  sensor_conf.sensor_id = 0x40;
-  sensor_conf.neopixel_gpio = 21;
-  sensor_conf.neopixel_nrleds = 64;
+  sensor_conf.sensor_id = DEFAULT_SENSOR;
+  sensor_conf.neopixel_gpio = LED_PIN;
+  sensor_conf.neopixel_nrleds = LED_COUNT;
   memcpy(sensor_conf.lego_colors, lego_colors, sizeof(lego_colors));
   memcpy(sensor_conf.led_mapping, led_mapping, sizeof(led_mapping));
   Serial.println("OK");
@@ -277,8 +283,6 @@ void functDefault(CmdParser *myParser) {
 
 
 void functSet(CmdParser *myParser) {
-
-  // Alarm
   if (myParser->equalCmdParam(1, "SENSOR")) {
     if (cmd_sensor(atoi(myParser->getCmdParam(2)))) {
       Serial.println("OK");

@@ -1,7 +1,16 @@
 # BLUEPAD32 Spike3
 
-
 This version emulates two different sensors: 1) the color sensor (ID=0x3d) and 2) the color matrix (ID=0x40, a 3x3 LED cube that comes with the Spike essential).
+
+### Color Sensor emulation
+If you flash this firmware [BluePad32 LPF2 for Spike3 emulating Color Sensor](https://firmware.antonsmindstorms.com/) and you connect the LMS-ESP32 with your robot bricks, you should see a new Color Sensor being recognized by the SPIKE app.
+In the SPIKE3 app you ca use the advanced sensor blocks to read the different colors form a Color Sensor to read out the values of a connected gamepad.
+
+### Color Matrix 
+
+If you flash this firmware [BluePad32 LPF2 for Spike3 emulating Color Matrix](https://firmware.antonsmindstorms.com/) and you connect the LMS-ESP32 with your robot bricks, you should see a new Color Matrix being recognized by the SPIKE app.
+
+Now you can use the default SPIKE3 World Block or Python to program the colors of your own NeoPixels. Because you probably want to make changes to the default configuration you can use the Serial Command Line or whe Web Configurator, as described below.
 
 ## Serial command line
 
