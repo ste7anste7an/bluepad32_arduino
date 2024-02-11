@@ -86,6 +86,7 @@ await port.open({ baudRate: 115200, bufferSize: 100000 });
 
   reader = inputStream.getReader();
   readLoop();
+  writeToStream("show");
 
 }
 
