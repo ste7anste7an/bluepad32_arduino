@@ -223,12 +223,10 @@ async function clickSendConfig() {
   } else {
     sensor_id=64;
   }
+  writeToStream(`set sensor ${sensor_id}`);
   if (sensor_id==64) { // only for color_matrix
     var neopixel_nrleds=field_neopixel_nrleds.value;
     var neopixel_gpio=field_neopixel_gpio.value;
-    
-    
-    writeToStream(`set sensor ${sensor_id}`);
     writeToStream(`set np_nr ${neopixel_nrleds}`);
     writeToStream(`set np_gpio ${neopixel_gpio}`);
 
