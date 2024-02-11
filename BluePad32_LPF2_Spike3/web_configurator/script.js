@@ -69,8 +69,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 async function connect() {
+
+const filter = {
+	usbVendorId: 0x1a86, // CH340
+	usbProductId: 0x7523
+};
 // - Request a port and open a connection.
-port = await navigator.serial.requestPort();
+port = await navigator.serial.requestPort({filters: [filter]});
 console.log(port);
 // - Wait for the port to open.
 await port.open({ baudRate: 115200, bufferSize: 100000 });
