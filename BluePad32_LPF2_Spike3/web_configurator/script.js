@@ -81,6 +81,7 @@ await port.open({ baudRate: 115200, bufferSize: 100000 });
   writeToStream('response 0'); // select non responsive interface on LMS-ESP32
   writeToStream("show");
   writeToStream("show");
+
   let decoder = new TextDecoderStream();
   inputDone = port.readable.pipeTo(decoder.writable);
   inputStream = decoder.readable;
