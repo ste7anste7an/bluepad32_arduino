@@ -186,6 +186,15 @@ async function clickConnect() {
   
   await connect();
 }
+async function clickClearNeopixel() {
+    writeToStream(`neopixel clear` );
+}
+
+async function clickSetNeopixel() {
+    var np_pixel = neopixel_pixel.value;
+    var c=hexToRgb(neopixel_color.value);
+    writeToStream(`neopixel set ${np_pixel} ${c.r} ${c.g} ${c.b}` );
+}
 
 
 async function clickLegoColor() {

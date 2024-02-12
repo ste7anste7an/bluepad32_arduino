@@ -85,7 +85,17 @@
         <input type="number" id="neopixel_nrleds" name="neopixel_nrleds" min="1" max="99">
         <label>NeoPixel GPIO</label>
         <input type="number" id="neopixel_gpio" name="neopixel_gpio" min="1" max="33">
-        
+<br>
+<br>
+       <label>NeoPixel Pixel</label>
+        <input type="number" id="neopixel_pixel" name="neopixel_pixel" value=0 min="0" max="99">
+        <label> NeoPixel color</label>
+        <input type="color" id="neopixel_color" value="#FF0000">
+<br>
+<br>
+ <button id="butSetNeopixel" type="button" onclick="clickSetNeopixel()"  class="btn btn-primary">Set Neopixel</button>
+
+ <button id="butClearNeopixel" type="button" onclick="clickClearNeopixel()"  class="btn btn-primary">Clear Neopixels</button>
       </div>
 </div></div></div>
 <br>
