@@ -248,7 +248,7 @@ async function clickSendConfig() {
 
     for (var i=0; i<11; i++) {
       var c=hexToRgb(color_fields[i].value);
-      console.log(c)
+      //console.log(c)
       writeToStream(`set color ${i} ${c.r} ${c.g} ${c.b}` );
     }
     for (var i=0; i<9; i++) {
@@ -283,7 +283,7 @@ while (true) {
       var OK=config.indexOf('OK');
       config=config.slice(start_magic);
       parsedconfig=parseconfig(config);
-      console.log(parsedconfig);
+      //console.log(parsedconfig);
       config="";
       if (parsedconfig.sensor_id==64) {
         radioMatrix.checked=true;
