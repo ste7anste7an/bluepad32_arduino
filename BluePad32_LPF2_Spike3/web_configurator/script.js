@@ -34,6 +34,7 @@ const butSaveConfig = document.getElementById("butSaveConfig");
 toggleUIConnected(false);
 const radioColor = document.getElementById("color_sensor");
 const radioMatrix = document.getElementById("color_matrix");
+const matrixSetup = document.getElementById("matrix-setup");
 
 const field_neopixel_nrleds = document.getElementById("neopixel_nrleds");
 const field_neopixel_gpio = document.getElementById("neopixel_gpio");
@@ -63,6 +64,8 @@ document.addEventListener("DOMContentLoaded", () => {
     butClearLog.addEventListener("click", clickClearLog);
     butSendConfig.addEventListener("click", clickSendConfig);
     butSaveConfig.addEventListener("click", clickSaveConfig);
+    radioColor.addEventListener("click", function(){matrixSetup.classList.remove("show");});
+    radioMatrix.addEventListener("click", function(){matrixSetup.classList.add("show");});
     // const notSupported = document.getElementById('notSupported');
     // notSupported.classList.toggle('hidden', 'serial' in navigator);
 });
@@ -315,6 +318,7 @@ async function readLoop() {
                 new_config = 0;
             }
             log.textContent = log.textContent + value;
+            log.scrollTop = log.scrollHeight;
             // console.log(value);
         }
 

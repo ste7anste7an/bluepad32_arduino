@@ -1,180 +1,483 @@
 <!DOCTYPE html>
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
-<link rel="stylesheet" href="/bootstrap-custom.css">
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="" />
+    <meta name="author" content="Anton Vanhoucke" />
+    <title>LMS-ESP32 SPIKE BluePad Configurator</title>
 
-<head>
-    <title>BluePad Sensor Configurator</title>
-    <meta charset="utf-8">
-    <meta name="codelab" content="LMS-ESP32 Spike3 sensor config">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <!-- <script>
-      // Redirect to HTTPS if HTTP is requested.
-      if (window.location.protocol === 'http:') {
-        window.location.href = 'https:' + window.location.href.substring(5);
-      }
-    </script> -->
-    <!-- <link rel="stylesheet" href="/style.css"> -->
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js" integrity="sha384-IQsoLXl5PILFhosVNubq5LC7Qb9DXgDA9i+tQ8Zj3iwWAwPtgFTxbJ8NT4GN1R8p" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.min.js" integrity="sha384-cVKIPhGWiC2Al4u+LWgxfKTRIcfu0JTxR+EQDz/bgldoEyl4H0zUF0QKbrJ0EcQF" crossorigin="anonymous"></script>
-    <script src="/script.js" defer></script>
-</head>
+    <!-- Bootstrap core CSS -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC"
+      crossorigin="anonymous"
+    />
 
-<body>
-    <div class="container-sm">
-        <main class="main">
-            <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-                <div class="container-fluid">
-                    <a class="navbar-brand" href="#">LMS-ESP32 Spike3 Sensor Configurator</a>
-                </div>
-            </nav>
-    </div>
-    <br>
-    <div class="container">
-        <div class="row ">
-            <div class="col-auto">
-                <button id="butConnect" type="button" class="btn btn-primary">Connect</button>
-            </div>
-            <div class="col text-end">
-                <button id="butGetConfig" type="button" class="btn btn-primary">Get config</button>
-                <button id="butDefault" type="button" class="btn btn-primary">Set default</button>
-                <button id="butSendConfig" type="button" class="btn btn-primary">Send config</button>
-                <button id="butSaveConfig" type="button" class="btn btn-primary">Save config</button>
-            </div>
+    <!-- Favicons -->
+    <link
+      rel="icon"
+      href="https://www.antonsmindstorms.com/wp-content/uploads/2018/10/cropped-Antons-Mindstorms-1-32x32.jpg"
+      sizes="32x32"
+    />
+    <link
+      rel="icon"
+      href="https://www.antonsmindstorms.com/wp-content/uploads/2018/10/cropped-Antons-Mindstorms-1-192x192.jpg"
+      sizes="192x192"
+    />
+    <link
+      rel="apple-touch-icon"
+      href="https://www.antonsmindstorms.com/wp-content/uploads/2018/10/cropped-Antons-Mindstorms-1-180x180.jpg"
+    />
+
+    <meta name="theme-color" content="#7952b3" />
+
+    <script src="script.js" defer></script>
+  </head>
+  <body>
+    <div class="col-lg-8 mx-auto p-3 py-md-5">
+      <header class="pb-2 mb-3 border-bottom">
+        <a
+          href="/"
+          class="d-flex align-items-center gap-2 text-dark text-decoration-none"
+        >
+          <img
+            class="header-image is-logo-image"
+            alt="Antons Mindstorms"
+            src="logo.svg"
+            width="40"
+            height="40"
+          />
+          <h1 class="fs-4 mt-1">LMS-ESP32 Configurator</h1>
+        </a>
+      </header>
+
+      <main>
+        <h2>Connect your board</h2>
+        <p class="col-md-8">
+          Ensure your LMS-ESP32 board is flashed with
+          <a href="https://firmware.antonsmindstorms.com"
+            >BluePad32 for Spike3</a
+          >, then connect it to your computer via USB.
+        </p>
+
+        <div class="mb-2">
+          <button id="butConnect" class="btn btn-primary px-4">Connect</button>
+          <button id="butGetConfig" class="btn btn-outline-primary">
+            Load config from board
+          </button>
+          <button id="butClearLog" class="btn btn-outline-primary">
+            Clear connection log
+          </button>
         </div>
-    </div>
-    <br>
-    <hr>
-    <br>
-    <div class="container">
-        <div class="well well-lg">
-            <div class="row ">
-                <div class="col-auto">
-                    <fieldset>
-                        <legend>Select a sensor:</legend>
-                        <div>
-                            <input type="radio" id="color_sensor" name="sensor" value="color_sensor" />
-                            <label for="color_sensor">Color Sensor</label>
+        <textarea
+          id="log"
+          class="container-xl p-3 text-white bg-dark overflow-y-scroll mb-5"
+          style="height: 100px; scroll-behavior: smooth"
+          readonly
+        >
+...</textarea
+        >
+
+        <h2>Select & configure sensor to emulate</h2>
+        <div class="mb-5">
+          <div
+            class="btn-group mb-2"
+            role="group"
+            aria-label="Sensor mode toggle"
+          >
+            <input
+              type="radio"
+              class="btn-check"
+              id="color_sensor"
+              name="sensor"
+              value="color_sensor"
+              autocomplete="off"
+              checked
+            />
+            <label class="btn btn-outline-success" for="color_sensor"
+              >Color Sensor</label
+            >
+
+            <input
+              type="radio"
+              class="btn-check"
+              id="color_matrix"
+              name="sensor"
+              value="color_matrix"
+              autocomplete="off"
+            />
+            <label class="btn btn-outline-success" for="color_matrix"
+              >Color Matrix</label
+            >
+          </div>
+          <div class="row collapse mb-3" id="matrix-setup">
+            <div class="col-sm-4">
+              <div class="card">
+                <div class="card-body">
+                  <h5 class="card-title mb-3">Color mapping</h5>
+                  <div class="container p-0 d-flex flex-wrap gap-2 mb-2">
+                    <div class="">
+                      <div class="input-group">
+                        <span class="input-group-text">0</span>
+                        <div class="form-floating">
+                          <input
+                            class="h-100 border-0"
+                            type="color"
+                            id="color0"
+                            value="#000000"
+                          />
                         </div>
-                        <div>
-                            <input type="radio" id="color_matrix" name="sensor" value="color_matrix" checked />
-                            <label for="color_matrix">Color Matrix</label>
-                        </div>
-                    </fieldset>
-                </div>
-                <div class="col text-end">
-                    <label>NeoPixel number of leds</label>
-                    <input type="number" id="neopixel_nrleds" name="neopixel_nrleds" min="1" max="99">
-                    <label>NeoPixel GPIO</label>
-                    <input type="number" id="neopixel_gpio" name="neopixel_gpio" min="1" max="33">
-                    <br>
-                    <br>
-                    <label>NeoPixel Pixel</label>
-                    <input type="number" id="neopixel_pixel" name="neopixel_pixel" value=0 min="0" max="99">
-                    <label> NeoPixel color</label>
-                    <input type="color" id="neopixel_color" value="#FF0000">
-                    <br>
-                    <br>
-                    <button id="butSetNeopixel" type="button" onclick="clickSetNeopixel()" class="btn btn-primary">Set Neopixel</button>
-                    <button id="butClearNeopixel" type="button" onclick="clickClearNeopixel()" class="btn btn-primary">Clear Neopixels</button>
-                </div>
-            </div>
-        </div>
-    </div>
-    <br>
-    <hr>
-    <div class="container-sm">
-        <div class="well well-lg">
-            <div class="row align-self-top">
-                <div class="col align-self-top">
-                    <h1 class="text-left">Lego colors</h1>
-                    <p>Choose colors to map on Lego Collor index.</p>
-                    <table>
-                        <tbody>
-                            <tr>
-                                <td> 0 </td>
-                                <td> <input type="color" id="color0" value="#000000"></td>
-                                <td> 1 </td>
-                                <td> <input type="color" id="color1" value="#E14B73"> </td>
-                                <td> 2 </td>
-                                <td> <input type="color" id="color2" value="#D787DC"> </td>
-                                <td> 3 </td>
-                                <td> <input type="color" id="color3" value="#5573F0"> </td>
-                            </tr>
-                            <tr>
-                                <td> 4 </td>
-                                <td> <input type="color" id="color4" value="#69CDDC"> </td>
-                                <td> 5 </td>
-                                <td> <input type="color" id="color5" value="#73D2AA"> </td>
-                                <td> 6 </td>
-                                <td> <input type="color" id="color6" value="#87EB5A"> </td>
-                                <td> 7 </td>
-                                <td> <input type="color" id="color7" value="#E6E65A"> </td>
-                            </tr>
-                            <tr>
-                                <td> 8 </td>
-                                <td> <input type="color" id="color8" value="#FAA550"> </td>
-                                <td> 9 </td>
-                                <td> <input type="color" id="color9" value="#FF4646"> </td>
-                                <td> 10 </td>
-                                <td> <input type="color" id="color10" value="#FFFFFF"> </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                    <br>
-                    <input type="button" onclick="clickLegoColor()" value="Lego Colors" name="legocolors" class="btn btn-primary">
-                </div>
-                <!-- <div class="container-sm"> -->
-                <!-- <div class="well well-lg"> -->
-                <div class="col align-self-top">
-                    <h1 class="text-left">Pixel mapping</h1>
-                    <p>Lego pixels mapping to NeoPixel positions</p>
-                    <table>
-                        <tbody>
-                            <tr>
-                                <td> 0 </td>
-                                <td> <input type="number" id="map1" name="map1" min="0" max="99"></td>
-                                <td> 1 </td>
-                                <td> <input type="number" id="map2" name="map2" min="0" max="99"> </td>
-                                <td> 2 </td>
-                                <td> <input type="number" id="map3" name="map3" min="0" max="99"> </td>
-                            </tr>
-                            <tr>
-                                <td> 3 </td>
-                                <td> <input type="number" id="map4" name="map4" min="0" max="99"></td>
-                                <td> 4 </td>
-                                <td> <input type="number" id="map5" name="map5" min="0" max="99"> </td>
-                                <td> 5 </td>
-                                <td> <input type="number" id="map6" name="map6" min="0" max="99"> </td>
-                            </tr>
-                            <tr>
-                                <td> 6 </td>
-                                <td> <input type="number" id="map7" name="map7" min="0" max="99"></td>
-                                <td> 7 </td>
-                                <td> <input type="number" id="map8" name="map8" min="0" max="99"> </td>
-                                <td> 8 </td>
-                                <td> <input type="number" id="map9" name="map9" min="0" max="99"> </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                    <br>
-                    <input type="button" onclick="clickDefaultMapping()" value="Default 1 to 9" name="onetoone" class="btn btn-primary">
-                </div>
-            </div>
-        </div>
-        <hr>
-        <div class="container-sm">
-            <br>
-            <button id="butClearLog" type="button" class="btn btn-info">Clear log</button>
-            <br>
-            <br>
-            <hr>
-            <pre id="log" style="overflow-y:scroll; max-width:1000px; height:200px; border:0.5px solid lightgray; padding:5px; white-space:pre-wrap;">
-        </pre>
-            <!-- <pre id="log"></pre> -->
-        </div>
-        </main>
-    </div>
-</body>
+                      </div>
+                    </div>
 
+                    <div class="">
+                      <div class="input-group">
+                        <span class="input-group-text">1</span>
+                        <div class="form-floating">
+                          <input
+                            class="h-100 border-0"
+                            type="color"
+                            id="color1"
+                            value="#C8C8FF"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="">
+                      <div class="input-group">
+                        <span class="input-group-text">2</span>
+                        <div class="form-floating">
+                          <input
+                            class="h-100 border-0"
+                            type="color"
+                            id="color2"
+                            value="#FF00FF"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="">
+                      <div class="input-group">
+                        <span class="input-group-text">3</span>
+                        <div class="form-floating">
+                          <input
+                            class="h-100 border-0"
+                            type="color"
+                            id="color3"
+                            value="#0000FF"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="">
+                      <div class="input-group">
+                        <span class="input-group-text">4</span>
+                        <div class="form-floating">
+                          <input
+                            class="h-100 border-0"
+                            type="color"
+                            id="color4"
+                            value="#00FFFF"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="">
+                      <div class="input-group">
+                        <span class="input-group-text">5</span>
+                        <div class="form-floating">
+                          <input
+                            class="h-100 border-0"
+                            type="color"
+                            id="color5"
+                            value="#00FF96"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="">
+                      <div class="input-group">
+                        <span class="input-group-text">6</span>
+                        <div class="form-floating">
+                          <input
+                            class="h-100 border-0"
+                            type="color"
+                            id="color6"
+                            value="#00FF00"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="">
+                      <div class="input-group">
+                        <span class="input-group-text">7</span>
+                        <div class="form-floating">
+                          <input
+                            class="h-100 border-0"
+                            type="color"
+                            id="color7"
+                            value="#FFFF00"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="">
+                      <div class="input-group">
+                        <span class="input-group-text">8</span>
+                        <div class="form-floating">
+                          <input
+                            class="h-100 border-0"
+                            type="color"
+                            id="color8"
+                            value="#FF8C00"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="">
+                      <div class="input-group">
+                        <span class="input-group-text">9</span>
+                        <div class="form-floating">
+                          <input
+                            class="h-100 border-0"
+                            type="color"
+                            id="color9"
+                            value="#FF0000"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="">
+                      <div class="input-group">
+                        <span class="input-group-text">10</span>
+                        <div class="form-floating">
+                          <input
+                            class="h-100 border-0"
+                            type="color"
+                            id="color10"
+                            value="#FFFFFF"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <a
+                    href="#"
+                    onclick="clickLegoColor()"
+                    value="Reset"
+                    name="legocolors"
+                    class="btn btn-outline-primary"
+                    >Reset to defaults</a
+                  >
+                </div>
+              </div>
+            </div>
+            <div class="col-sm-4">
+              <div class="card">
+                <div class="card-body">
+                  <h5 class="card-title mb-3">Neopixel setup</h5>
+                  <div>
+                    <label>Number of leds</label>
+                    <input
+                      type="number"
+                      id="neopixel_nrleds"
+                      name="neopixel_nrleds"
+                      min="1"
+                      max="99"
+                    />
+                  </div>
+                  <div>
+                    <label>GPIO Pin</label>
+                    <input
+                      type="number"
+                      id="neopixel_gpio"
+                      name="neopixel_gpio"
+                      min="1"
+                      max="33"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-sm-4">
+              <div class="card">
+                <div class="card-body">
+                  <h5 class="card-title mb-3">Lego pixels to NeoPixel index</h5>
+                  <div class="container p-0 mb-2">
+                    <table>
+                      <tbody>
+                        <tr>
+                          <td>
+                            <input
+                              type="number"
+                              id="map1"
+                              name="map1"
+                              min="0"
+                              max="99"
+                              value="0"
+                            />
+                          </td>
+                          <td>
+                            <input
+                              type="number"
+                              id="map2"
+                              name="map2"
+                              min="0"
+                              max="99"
+                              value="1"
+                            />
+                          </td>
+                          <td>
+                            <input
+                              type="number"
+                              id="map3"
+                              name="map3"
+                              min="0"
+                              value="2"
+                              max="99"
+                            />
+                          </td>
+                        </tr>
+                        <tr>
+                          <td>
+                            <input
+                              type="number"
+                              id="map4"
+                              name="map4"
+                              min="0"
+                              max="99"
+                              value="3"
+                            />
+                          </td>
+                          <td>
+                            <input
+                              type="number"
+                              id="map5"
+                              name="map5"
+                              min="0"
+                              max="99"
+                              value="4"
+                            />
+                          </td>
+                          <td>
+                            <input
+                              type="number"
+                              id="map6"
+                              name="map6"
+                              min="0"
+                              max="99"
+                              value="5"
+                            />
+                          </td>
+                        </tr>
+                        <tr>
+                          <td>
+                            <input
+                              type="number"
+                              id="map7"
+                              name="map7"
+                              min="0"
+                              max="99"
+                              value="6"
+                            />
+                          </td>
+                          <td>
+                            <input
+                              type="number"
+                              id="map8"
+                              name="map8"
+                              min="0"
+                              max="99"
+                              value="8"
+                            />
+                          </td>
+                          <td>
+                            <input
+                              type="number"
+                              id="map9"
+                              name="map9"
+                              min="0"
+                              max="99"
+                              value="9"
+                            />
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  <input
+                    type="button"
+                    onclick="clickDefaultMapping()"
+                    value="Reset to defaults"
+                    name="onetoone"
+                    class="btn btn-outline-primary"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <h2>Send configuration</h2>
+        <div class="mb-5">
+          <button id="butSaveConfig" class="btn btn-primary px-4">
+            Send & save to flash
+          </button>
+          <button id="butSendConfig" class="btn btn-outline-primary px-4">
+            Send & try config
+          </button>
+          <button id="butDefault" class="btn btn-outline-primary px-4">
+            Reset to default
+          </button>
+        </div>
+        <h2>Test neopixels</h2>
+        <div>
+          <label>NeoPixel Pixel</label>
+          <input
+            type="number"
+            id="neopixel_pixel"
+            name="neopixel_pixel"
+            value="0"
+            min="0"
+            max="99"
+          />
+          <label> NeoPixel color</label>
+          <input type="color" id="neopixel_color" value="#FF0000" />
+          <br />
+          <br />
+          <button
+            id="butSetNeopixel"
+            type="button"
+            onclick="clickSetNeopixel()"
+            class="btn btn-outline-primary"
+          >
+            Set Neopixel
+          </button>
+          <button
+            id="butClearNeopixel"
+            type="button"
+            onclick="clickClearNeopixel()"
+            class="btn btn-outline-primary"
+          >
+            Clear Neopixels
+          </button>
+        </div>
+      </main>
+      <footer class="pt-5 my-5 text-muted border-top">
+        Created by Ste7an & Anton &middot; &copy; 2024
+      </footer>
+    </div>
+
+    <!-- <script src="/docs/5.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script> -->
+  </body>
 </html>
