@@ -84,7 +84,7 @@
         <h2>Select & configure sensor to emulate</h2>
         <div class="mb-5">
           <div class="mb-2" role="group" aria-label="Sensor mode toggle">
-            <div class="form-check form-check-inline">
+            <div class="form-check-inline">
               <input
                 type="radio"
                 class="form-check-input"
@@ -98,7 +98,7 @@
                 >Color Sensor</label
               >
             </div>
-            <div class="form-check form-check-inline">
+            <div class="form-check-inline">
               <input
                 type="radio"
                 class="form-check-input"
@@ -429,6 +429,10 @@
           </div>
         </div>
         <h2>Send configuration</h2>
+        <p class="col-md-8">
+          Tweak your configuration live, while connected to the hub by using <em>Send & Try Config</em>. 
+          Once you're happy, click <em>Send & save to flash</em>.
+        </p>
         <div class="mb-5">
           <button id="butSaveConfig" class="btn btn-primary px-4">
             Send & save to flash
@@ -441,20 +445,31 @@
           </button>
         </div>
         <h2>Test neopixels</h2>
-        <div>
-          <label>NeoPixel Pixel</label>
-          <input
-            type="number"
-            id="neopixel_pixel"
-            name="neopixel_pixel"
-            value="0"
-            min="0"
-            max="99"
-          />
-          <label> NeoPixel color</label>
-          <input type="color" id="neopixel_color" value="#FF0000" />
-          <br />
-          <br />
+
+        <div class="row g-3 align-items-center mb-2">
+          <div class="col-auto">
+            <label class="col-form-label">Set pixel number </label>
+            <input
+              type="number"
+              id="neopixel_pixel"
+              name="neopixel_pixel"
+              value="0"
+              min="0"
+              max="99"
+            />
+          </div>
+          <div class="col-sm-3 align-items-center d-inline-flex">
+            <label class="col-form-label p-2"> to this color</label>
+            <input
+              class="form-control form-control-color"
+              type="color"
+              id="neopixel_color"
+              value="#FF0000"
+            />
+          </div>
+        </div>
+
+        <div class="form-check-inline">
           <button
             id="butSetNeopixel"
             type="button"
