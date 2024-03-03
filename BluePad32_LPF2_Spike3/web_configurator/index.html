@@ -83,35 +83,34 @@
 
         <h2>Select & configure sensor to emulate</h2>
         <div class="mb-5">
-          <div
-            class="btn-group mb-2"
-            role="group"
-            aria-label="Sensor mode toggle"
-          >
-            <input
-              type="radio"
-              class="btn-check"
-              id="color_sensor"
-              name="sensor"
-              value="color_sensor"
-              autocomplete="off"
-              checked
-            />
-            <label class="btn btn-outline-success" for="color_sensor"
-              >Color Sensor</label
-            >
-
-            <input
-              type="radio"
-              class="btn-check"
-              id="color_matrix"
-              name="sensor"
-              value="color_matrix"
-              autocomplete="off"
-            />
-            <label class="btn btn-outline-success" for="color_matrix"
-              >Color Matrix</label
-            >
+          <div class="mb-2" role="group" aria-label="Sensor mode toggle">
+            <div class="form-check form-check-inline">
+              <input
+                type="radio"
+                class="form-check-input"
+                id="color_sensor"
+                name="sensor"
+                value="color_sensor"
+                autocomplete="off"
+                checked
+              />
+              <label class="form-check-label" for="color_sensor"
+                >Color Sensor</label
+              >
+            </div>
+            <div class="form-check form-check-inline">
+              <input
+                type="radio"
+                class="form-check-input"
+                id="color_matrix"
+                name="sensor"
+                value="color_matrix"
+                autocomplete="off"
+              />
+              <label class="form-check-label" for="color_matrix"
+                >Color Matrix</label
+              >
+            </div>
           </div>
           <div class="row collapse mb-3" id="matrix-setup">
             <div class="col-sm-4">

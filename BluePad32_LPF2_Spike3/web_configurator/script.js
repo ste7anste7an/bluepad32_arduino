@@ -240,6 +240,7 @@ async function clickGetConfig() {
 }
 
 async function clickSaveConfig() {
+    clickSendConfig();
     writeToStream(`save`);
 }
 
@@ -298,8 +299,10 @@ async function readLoop() {
                 config = "";
                 if (parsedconfig.sensor_id == 64) {
                     radioMatrix.checked = true;
+                    matrixSetup.classList.add("show");
                 } else if (parsedconfig.sensor_id == 61) {
                     radioColor.checked = true;
+                    matrixSetup.classList.remove("show");
                 }
                 field_neopixel_nrleds.value = parsedconfig.neopixel_nrleds;
                 field_neopixel_gpio.value = parsedconfig.neopixel_gpio;
