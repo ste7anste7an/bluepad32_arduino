@@ -203,8 +203,8 @@ async function clickSetNeopixel() {
 async function clickLegoColor() {
     const lego_colors = [
         "#000000",
-        "#C8C8FF",
-        "#FF00FF",
+        "#FF0059",
+        "#C800FF",
         "#0000FF",
         "#00FFFF",
         "#00FF96",
