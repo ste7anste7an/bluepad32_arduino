@@ -469,6 +469,7 @@ void setup() {
   }
 
   cmdCallback.addCmd(strHelp, &functHelp);
+  cmdCallback.addCmd(strResponse, &functResponse);
   cmdCallback.addCmd(strSet, &functSet);
   cmdCallback.addCmd(strShow, &functShow);
   cmdCallback.addCmd(strSave, &functSave);
