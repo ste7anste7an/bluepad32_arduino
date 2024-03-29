@@ -70,6 +70,128 @@ document.addEventListener("DOMContentLoaded", () => {
     // notSupported.classList.toggle('hidden', 'serial' in navigator);
 });
 
+
+// code van vincent
+const gridWidth = 9; // X width
+const gridHeight = 16; // Y height
+let controller_selected = [];
+let controller_val=[];
+const gridContainer = document.getElementById('grid');
+gridContainer.style.gridTemplateColumns = `repeat(${gridWidth+1}, 1fr)`;
+gridContainer.className = 'grid';
+
+for (let col = -1; col < gridWidth; col++) {
+  const cell = document.createElement('div');
+  if(col == -1) {
+      cell.className = 'cellnothing';
+  } else {
+      cell.className = 'cell_column_header';
+      cell.innerHTML = col;
+  }
+  
+  cell.dataset.row = -1;
+  cell.dataset.col = col;
+  
+  gridContainer.appendChild(cell);
+}
+for (let row = 0; row < gridHeight; row++) {
+  const rowcell = document.createElement('div');
+  rowcell.className = 'cell_row_header';
+  
+  rowcell.dataset.row = -1;
+  rowcell.dataset.col = row;
+  rowcell.innerHTML = row;
+  gridContainer.appendChild(rowcell);
+
+  for (let col = 0; col < gridWidth; col++) {
+    const cell = document.createElement('div');
+    cell.className = 'cell';
+    cell.dataset.row = row;
+    cell.dataset.col = col;
+    cell.addEventListener('click', function() {
+      selectCell(row, col);
+    });
+    gridContainer.appendChild(cell);
+    if(col == 0) {
+      setCellSelected(row, col, true);
+    }
+  }
+}
+
+updateSelectedCells();
+
+function cellIsSelected(row, col) {
+  const selectedCell = document.querySelector(`.cell[data-row='${row}'][data-col='${col}']`);
+  return selectedCell.classList.contains('selected');
+}
+
+function updateSelectedCellsText() {
+  const gridData = document.getElementById('griddata');
+  gridData.innerHTML = '';
+  for(let col=0;col<gridWidth;col++) {
+      let bytes=[0,0,0,0];
+      for (let b=0; b<4; b++) {
+         for (let bit=0; bit<8; bit++) {
+            if (controller_selected[col].includes(b*8+bit)) {
+                bytes[b]+=(1<<bit);
+            }
+         }
+      }
+      gridData.innerHTML += `controller ${col}: ${controller_selected[col].join(', ')}  bytes: ${bytes.join(', ')}<br>`;
+  }
+
+}
+
+function updateSelectedCells() {
+  controller_selected = [];
+
+  for(let col=0;col<gridWidth;col++) {
+      controller_selected[col] = [];
+      for(let row=0;row<gridHeight;row++) {
+          if(cellIsSelected(row, col)) {
+              controller_selected[col].push(row);
+          }
+      }
+  }
+  updateSelectedCellsText();
+}
+
+function setCellSelected(row, col, selected) {
+  const cell = document.querySelector(`.cell[data-row='${row}'][data-col='${col}']`);
+  if (selected) {
+    cell.classList.add('selected');
+  } else {
+    cell.classList.remove('selected');
+  }
+}
+
+function selectCell(row, col) {
+  const allCellsInRow = document.querySelectorAll(`.cell[data-row='${row}']`);
+  allCellsInRow.forEach(cell => cell.classList.remove('selected'));
+  setCellSelected(row, col, true);
+  updateSelectedCells();
+}
+
+async function clickSetMapping() {
+    console.log("click");
+    let bytes=[8,255,0,0];
+    for (let b=0; b<4; b++) {
+        let bb=bytes[b];
+        for (let bit=0; bit<8; bit++) {
+            if (b*8+bit<gridHeight) {
+                if (bb&1) {
+                    selectCell(b*8+bit,1);
+                }
+            }
+             bb>>=1;
+        }
+     }
+     updateSelectedCells();
+
+}
+// end code vincent
+
+
 async function connect() {
     const filter = {
         usbVendorId: 0x1a86, // CH340
@@ -137,27 +259,32 @@ function parseconfig(a) {
     //console.log(neopixel_nrleds);
     var neopixel_gpio = parseInt(lines[3].split(" ").pop());
     //console.log(neopixel_gpio);
-    var mapping = lines[4].split(" ");
-    mapping.shift(); // remove first element
-    mapping.pop(); // remoce last element
-    var mapnums = getnums(mapping);
-    //console.log(mapnums);
+    var mapping = [];
+    for (var j = 0; j < 9; j++) {
+        var map = lines[j + 5].split(" ");
+        //col.shift();
+        //col.pop();
+        var mapnums = getnums(map);
+        mapping.push(mapnums);
+    }
+    console.log('MAPNUMS');
+    console.log(mapping);
     //try{
     var colors = [];
     for (var j = 0; j < 11; j++) {
-        var col = lines[j + 5].split(" ");
+        var col = lines[j + 13].split(" ");
         col.shift();
         col.pop();
         var colnums = getnums(col);
         colors.push(colnums);
     }
-    //console.log(colors);
+    console.log(colors);
 
     return {
         sensor_id: sensor_id,
         neopixel_nrleds: neopixel_nrleds,
         neopixel_gpio: neopixel_gpio,
-        mapnums: mapnums,
+        mapping: mapping,
         colors: colors,
     };
 } //catch {console.log("error");}
@@ -307,8 +434,24 @@ async function readLoop() {
                 field_neopixel_nrleds.value = parsedconfig.neopixel_nrleds;
                 field_neopixel_gpio.value = parsedconfig.neopixel_gpio;
                 for (var i = 0; i < 9; i++) {
-                    map_fields[i].value = parsedconfig.mapnums[i];
+                    let map= parsedconfig.mapping[i];
+                
+
+                    for (let b=0; b<4; b++) {
+                      let bb=map[b+1];
+                      for (let bit=0; bit<8; bit++) {
+                        if (b*8+bit<gridHeight) {
+                            if (bb&1) {
+                                selectCell(b*8+bit,i);
+                            }
+            
+                        }
+                         bb>>=1;
+                      }
+                    }
                 }
+                 updateSelectedCells();
+                
                 for (var i = 0; i < 11; i++) {
                     var cc = parsedconfig.colors[i];
                     var r, g, b;

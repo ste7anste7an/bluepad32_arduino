@@ -6,7 +6,60 @@
     <meta name="description" content="" />
     <meta name="author" content="Anton Vanhoucke" />
     <title>LMS-ESP32 SPIKE BluePad Configurator</title>
-
+    <style>
+   
+      .grid {
+        display: grid;
+        gap: 2px;
+      }
+      .cell {
+        width: 20px;
+        height: 20px;
+        background-color: #f0f0f0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+        user-select: none;
+      }
+      .cell_column_header {
+        width: 20px;
+        height: 20px;
+        font-weight: bold;
+        background-color: #8a92ff;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+        user-select: none;
+      }
+      .cell_row_header {
+        width: 20px;
+        height: 20px;
+        font-weight: bold;
+        background-color: #fdd244;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+        user-select: none;
+      }
+      .cell.selected {
+        background-color: lightblue;
+      }
+      .inl {
+        display: inline-block;
+        margin-right: 5px;
+      }
+      .vertalign {
+        display: flex;
+        align-items: center;
+    
+      }
+      #griddata {
+        width: 300px;
+      }
+    </style>
     <!-- Bootstrap core CSS -->
     <link
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css"
@@ -426,6 +479,10 @@
                 </div>
               </div>
             </div>
+
+      
+
+
           </div>
         </div>
         <h2>Send configuration</h2>
@@ -488,6 +545,22 @@
             Clear Neopixels
           </button>
         </div>
+
+        <div id="explanation">
+          <div class="vertalign"><div class="cell selected inl"></div><span>selected led</span></div>
+          <div class="vertalign"><div class="cell_column_header inl"></div>controller</div>
+          <div class="vertalign"><div class="cell_row_header inl"></div>led</div>
+      </div>
+      <div id="griddata"></div>
+      <div id="grid"></div>
+      <input
+                    type="button"
+                    onclick="clickSetMapping()"
+                    value="Set mapping"
+                    name="mapping"
+                    class="btn btn-outline-primary"
+                  />
+
       </main>
       <footer class="pt-5 my-5 text-muted border-top">
         Created by Ste7an & Anton &middot; &copy; 2024

@@ -189,7 +189,7 @@ void functShow(CmdParser *myParser) {
   Serial.println((String) "sensor: " + sensor_conf.sensor_id);
   Serial.println((String) "neopixel_nrleds: " + sensor_conf.neopixel_nrleds);
   Serial.println((String) "neopixel_gpio: " + sensor_conf.neopixel_gpio);
-  Serial.print("mapping: ");
+  Serial.println("mapping: ");
   for (int i = 0; i < 9; i++) {
     Serial.print((String)i + " ");
     for (int j = 0; j < 4; j++) {
@@ -421,7 +421,7 @@ void neopixel_callback(byte buf[], byte s) {
       byte colb = int(sensor_conf.lego_colors[buf[i] % 16][2] / 10.0 * bright);
       // Serial.printf("led %d,val=0x%02x,b=%d,c=%d (%d,%d,%d)\n", i, buf[i], bright, buf[i] % 16, colr, colg, colb);
       for (int j=0; j<4; j++) {
-       uint8_t b=led_mapping[i][j];
+       uint8_t b=sensor_conf.led_mapping[i][j];
        printf("byte = %d\n",b);
        for (int k=0; k<8; k++) {
           if (b&1) {
