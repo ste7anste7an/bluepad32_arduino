@@ -21,6 +21,7 @@
         align-items: center;
         cursor: pointer;
         user-select: none;
+        border: 1px solid #ccc;
       }
       .cell_column_header {
         width: 20px;
@@ -332,6 +333,14 @@
                     name="legocolors"
                     class="btn btn-outline-primary"
                     >Reset to defaults</a
+                  > <p>
+                  <a
+                    href="#"
+                    onclick="clickSendLegoColor()"
+                    value="Reset"
+                    name="sendlegocolors"
+                    class="btn btn-outline-primary"
+                    >Send colors</a
                   >
                 </div>
               </div>
@@ -380,6 +389,15 @@
             name="onetoone"
             class="btn btn-outline-primary"
         />
+        <a
+        href="#"
+        onclick="clickSendMapping()"
+        value="Reset"
+        name="clickSendMapping"
+        class="btn btn-outline-primary"
+        >Send Mapping</a
+      >
+
 
             </div>
             </div>

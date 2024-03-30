@@ -47,7 +47,7 @@ GamepadPtr myGamepads[BP32_MAX_GAMEPADS];
 #define COLOR_SENSOR 0x3D
 #define DEFAULT_SENSOR COLOR_SENSOR
 #include <EEPROM.h>
-#define EEPROM_SIZE 100
+#define EEPROM_SIZE 256
 
 
 #include <CmdBuffer.hpp>
@@ -57,9 +57,9 @@ GamepadPtr myGamepads[BP32_MAX_GAMEPADS];
 // CmdParser v1.7
 // can be installed via library manager
 
-CmdCallback<10> cmdCallback;
+CmdCallback<15> cmdCallback;
 
-CmdBuffer<32> myBuffer;
+CmdBuffer<50> myBuffer;
 CmdParser myParser;
 
 char strHelp[] = "HELP";
@@ -73,7 +73,7 @@ char strEeprom[] = "EEPROM";
 
 char strMAGIC[] = "LMSESP";
 
-byte response = 0;  // no response of commands except OK or ERROR
+byte response = 1;  // no response of commands except OK or ERROR
 
 /*
 
@@ -101,7 +101,7 @@ byte lego_colors[11][3] = { { 0, 0, 0 }, { 200, 200, 255 }, { 255, 0, 255 }, { 0
 // 5x5 matrix
 // byte led_mapping[9] = { 3, 4, 5, 11, 12, 13, 19, 20, 21 };
 // 3x3 matrix
-byte led_mapping[9][4] = {}; //empty bitssets
+byte led_mapping[9][8] = {};  //empty bitssets
 
 
 
@@ -121,14 +121,14 @@ struct Sensor {
   byte sensor_id;
   byte neopixel_gpio;
   byte neopixel_nrleds;
-  byte led_mapping[9][4];
+  byte led_mapping[9][8];
   byte lego_colors[11][3];
 } sensor_conf;
 // use pointer allows to dynamically change nrumber of leds or pin
 // change strip.begin() to strip->begin(), etc.
 // delete object before initiating a new one
 #define LED_PIN 21
-#define LED_COUNT 64
+#define LED_COUNT 16
 Adafruit_NeoPixel *neopixel_strip = new Adafruit_NeoPixel(LED_COUNT, LED_PIN);  //, NEO_GRB + NEO_KHZ800);
 
 byte cmd_sensor(byte sensor_id) {
@@ -143,6 +143,11 @@ byte cmd_sensor(byte sensor_id) {
 byte cmd_np_nr(byte np_nr) {
   if (np_nr > 0 && np_nr < 64) {
     sensor_conf.neopixel_nrleds = np_nr;
+    neopixel_strip->clear();
+    neopixel_strip->show();
+    delete neopixel_strip;
+    neopixel_strip = new Adafruit_NeoPixel(sensor_conf.neopixel_nrleds, sensor_conf.neopixel_gpio);  //nr_leds, pin
+
     return 1;
   } else {
     return 0;
@@ -152,20 +157,26 @@ byte cmd_np_nr(byte np_nr) {
 byte cmd_np_gpio(byte np_gpio) {
   if (np_gpio >= 0 && np_gpio < 33) {
     sensor_conf.neopixel_gpio = np_gpio;
+    delete neopixel_strip;
+    neopixel_strip = new Adafruit_NeoPixel(sensor_conf.neopixel_nrleds, sensor_conf.neopixel_gpio);  //nr_leds, pin
+
     return 1;
   } else {
     return 0;
   }
 }
 
-byte cmd_map(byte lego_led_nr, byte b1, byte b2, byte b3, byte b4) {
+byte cmd_map(byte lego_led_nr, byte b1, byte b2, byte b3, byte b4, byte b5, byte b6, byte b7, byte b8) {
   //Serial.println((String)"lego_led_nr="+lego_led_nr+" np_led_nr="+np_led_nr);
   if (lego_led_nr >= 0 && lego_led_nr < 11) {
     sensor_conf.led_mapping[lego_led_nr][0] = b1;
     sensor_conf.led_mapping[lego_led_nr][1] = b2;
     sensor_conf.led_mapping[lego_led_nr][2] = b3;
     sensor_conf.led_mapping[lego_led_nr][3] = b4;
-
+    sensor_conf.led_mapping[lego_led_nr][4] = b5;
+    sensor_conf.led_mapping[lego_led_nr][5] = b6;
+    sensor_conf.led_mapping[lego_led_nr][6] = b7;
+    sensor_conf.led_mapping[lego_led_nr][7] = b8;
     return 1;
   } else {
     return 0;
@@ -192,7 +203,7 @@ void functShow(CmdParser *myParser) {
   Serial.println("mapping: ");
   for (int i = 0; i < 9; i++) {
     Serial.print((String)i + " ");
-    for (int j = 0; j < 4; j++) {
+    for (int j = 0; j < 8; j++) {
       Serial.print((String)sensor_conf.led_mapping[i][j] + " ");
     }
     Serial.println();
@@ -221,12 +232,12 @@ void functResponse(CmdParser *myParser) {
 
 void functEeprom(CmdParser *myParser) {
   if (myParser->equalCmdParam(1, "READ")) {
-    byte eeprom[100];
+    byte eeprom[256];
     EEPROM.get(0, eeprom);
     Serial.println("EEPROM content");
-    for (int i = 0; i < 10; i++) {
-      for (int j = 0; j < 10; j++) {
-        Serial.printf("%02X ", eeprom[i * 10 + j]);
+    for (int i = 0; i < 16; i++) {
+      for (int j = 0; j < 16; j++) {
+        Serial.printf("%02X ", eeprom[i * 16 + j]);
       }
       Serial.println();
     }
@@ -316,7 +327,11 @@ void functSet(CmdParser *myParser) {
                 atoi(myParser->getCmdParam(3)),
                 atoi(myParser->getCmdParam(4)),
                 atoi(myParser->getCmdParam(5)),
-                atoi(myParser->getCmdParam(6)))) {
+                atoi(myParser->getCmdParam(6)),
+                atoi(myParser->getCmdParam(7)),
+                atoi(myParser->getCmdParam(8)),
+                atoi(myParser->getCmdParam(9)),
+                atoi(myParser->getCmdParam(10)))) {
       Serial.println("OK");
     } else {
       Serial.println("ERROR");
@@ -324,15 +339,15 @@ void functSet(CmdParser *myParser) {
   } else
 
     if (myParser->equalCmdParam(1, "COLOR")) {
-      if (cmd_color(atoi(myParser->getCmdParam(2)),
-                    atoi(myParser->getCmdParam(3)),
-                    atoi(myParser->getCmdParam(4)),
-                    atoi(myParser->getCmdParam(5)))) {
-        Serial.println("OK");
-      } else {
-        Serial.println("ERROR");
-      }
+    if (cmd_color(atoi(myParser->getCmdParam(2)),
+                  atoi(myParser->getCmdParam(3)),
+                  atoi(myParser->getCmdParam(4)),
+                  atoi(myParser->getCmdParam(5)))) {
+      Serial.println("OK");
+    } else {
+      Serial.println("ERROR");
     }
+  }
   if (response) Serial.println("Receive Set");
 }
 
@@ -420,16 +435,16 @@ void neopixel_callback(byte buf[], byte s) {
       byte colg = int(sensor_conf.lego_colors[buf[i] % 16][1] / 10.0 * bright);
       byte colb = int(sensor_conf.lego_colors[buf[i] % 16][2] / 10.0 * bright);
       // Serial.printf("led %d,val=0x%02x,b=%d,c=%d (%d,%d,%d)\n", i, buf[i], bright, buf[i] % 16, colr, colg, colb);
-      for (int j=0; j<4; j++) {
-       uint8_t b=sensor_conf.led_mapping[i][j];
-       printf("byte = %d\n",b);
-       for (int k=0; k<8; k++) {
-          if (b&1) {
-             printf("Bit check: %d ",j*8+k);
-             neopixel_strip->setPixelColor(j*8+k, colr, colg, colb);
+      for (int j = 0; j < 8; j++) {
+        uint8_t b = sensor_conf.led_mapping[i][j];
+        //printf("byte = %d\n",b);
+        for (int k = 0; k < 8; k++) {
+          if (b & 1) {
+            //printf("neopixel: %d %d %d %d\n",j*8+k,colr, colg, colb);
+            neopixel_strip->setPixelColor(j * 8 + k, colr, colg, colb);
           }
-          b>>=1;
-       }
+          b >>= 1;
+        }
       }
       //neopixel_strip->setPixelColor(sensor_conf.led_mapping[i][0], colr, colg, colb);
     }
@@ -463,6 +478,8 @@ void config_sensor() {
     Serial.printf("LOG: NeoPixel on GPIO %d\r\n", sensor_conf.neopixel_gpio);
     Serial.printf("LOG: NeoPixel has %d leds\r\n", sensor_conf.neopixel_nrleds);
     // reinit neopixel strip
+    neopixel_strip->clear();
+    neopixel_strip->show();
     delete neopixel_strip;
     neopixel_strip = new Adafruit_NeoPixel(sensor_conf.neopixel_nrleds, sensor_conf.neopixel_gpio);  //nr_leds, pin
     // for (int i = 0; i < 9; i++) { Serial.printf("map[%d]=%d\n", i, sensor_conf.led_mapping[i]); }
@@ -486,6 +503,7 @@ void setup() {
 
 
   Serial.begin(115200);
+  Serial.setRxBufferSize(1000);
   EEPROM.begin(EEPROM_SIZE);
   EEPROM.get(0, sensor_conf);
   // if EEPROM is not already initialized, do so with default values
@@ -545,8 +563,7 @@ void setup() {
   connected = lpf2_sensor->reset();
   if (connected == 1) {
     Serial.printf("LOG: LMS-ESP32 is connected to the SPIKE3 hub.\r\n");
-  }
-  else {
+  } else {
     Serial.printf("ERROR: Failure connecting LMS-ESP32 to the SPIKE3 hub. Press RESET button on LMS-ESp32.\r\n");
   }
   Serial.println("Go to https://bluepad.antonsmindstorms.com to configure the LMS-ESp32.\r\n");
@@ -563,6 +580,7 @@ int update_Cmd = 0;
 
 unsigned long last_reading = 0;
 int last_mode = 0;
+
 void loop() {
   refresh_BP32++;
   if (refresh_BP32 == 10) {
@@ -570,7 +588,7 @@ void loop() {
     refresh_BP32 = 0;
   }
   update_Cmd++;
-  if (update_Cmd == 10) {
+  if (update_Cmd == 1) {
     cmdCallback.updateCmdProcessing(&myParser, &myBuffer, &Serial);
     update_Cmd = 0;
   }

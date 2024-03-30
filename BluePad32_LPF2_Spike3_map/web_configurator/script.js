@@ -45,11 +45,11 @@ for (var i = 0; i < 11; i++) {
     color_fields.push(color);
 }
 // create array with fields 'map0, map1,' etc.
-var map_fields = [];
-for (var i = 1; i < 10; i++) {
-    var map = document.getElementById(`map${i}`);
-    map_fields.push(map);
-}
+// var map_fields = [];
+// for (var i = 1; i < 10; i++) {
+//     var map = document.getElementById(`map${i}`);
+//     map_fields.push(map);
+// }
 
 // some global variables for parsing configuration
 var config = "";
@@ -81,7 +81,7 @@ field_neopixel_nrleds.addEventListener("change", (event) => {
     if (gridHeight>64) {gridHeight=64; field_neopixel_nrleds.value = gridHeight;}
     console.log(`changed: ${gridHeight}`);
     updateGrid();
-    clickSetMapping();
+    SetMapping();
     updateSelectedCells();
 
   });
@@ -134,7 +134,7 @@ for (let row = 0; row < gridHeight; row++) {
 }
 }
 updateGrid();
-clickSetMapping();
+SetMapping();
 updateSelectedCells();
 
 function cellIsSelected(row, col) {
@@ -147,8 +147,8 @@ function updateSelectedCellsText() {
   //gridData.innerHTML = '';
   controller_bytes=[];
   for(let col=0;col<gridWidth;col++) {
-      let bytes=[0,0,0,0];
-      for (let b=0; b<4; b++) {
+      let bytes=[0,0,0,0,0,0,0,0];
+      for (let b=0; b<8; b++) {
          for (let bit=0; bit<8; bit++) {
             if (controller_selected[col].includes(b*8+bit)) {
                 bytes[b]+=(1<<bit);
@@ -195,18 +195,20 @@ function selectCell(row, col) {
   updateSelectedCells();
 }
 
-async function clickSetMapping() {
-    console.log("click");
+function SetMapping() {
+    console.log(`set mapping ${gridHeight}`);
     for (let i=0; i<9; i++) {
     let bytes=controller_bytes[i];
-    for (let b=0; b<4; b++) {
+    for (let b=0; b<8; b++) {
         let bb=bytes[b];
         for (let bit=0; bit<8; bit++) {
             if (b*8+bit<gridHeight) {
                 //if (bb&1) {
                     setCellSelected(b*8+bit,i,bb&1);
                 //}
-            }
+            } //else {
+               // console.log(`${b*8+bit} > ${gridHeight}`);
+           // }
              bb>>=1;
         }
      }
@@ -223,10 +225,10 @@ async function connect() {
         usbProductId: 0x7523,
     };
     // - Request a port and open a connection.
-    port = await navigator.serial.requestPort({ filters: [filter] });
+    port = await navigator.serial.requestPort({ filters: [filter] ,bufferSize:10000});
     console.log(port);
     // - Wait for the port to open.
-    await port.open({ baudRate: 115200, bufferSize: 100000 });
+    await port.open({ baudRate: 115200, bufferSize: 10000, flowControl:"none" });
 
     const encoder = new TextEncoderStream();
     outputDone = encoder.readable.pipeTo(port.writable);
@@ -269,7 +271,7 @@ function hexToRgb(hex) {
 }
 
 function parseconfig(a) {
-    console.log("=====================\n"+a+"==============================");
+    // console.log("=====================\n"+a+"==============================");
     var lines = a.split("\n");
     var l = lines.length;
     function getnums(a) {
@@ -293,8 +295,8 @@ function parseconfig(a) {
         var mapnums = getnums(map);
         mapping.push(mapnums);
     }
-    console.log('MAPNUMS');
-    console.log(mapping);
+    // console.log('MAPNUMS');
+    // console.log(mapping);
     //try{
     var colors = [];
     for (var j = 0; j < 11; j++) {
@@ -304,7 +306,7 @@ function parseconfig(a) {
         var colnums = getnums(col);
         colors.push(colnums);
     }
-    console.log(colors);
+    // console.log(colors);
 
     return {
         sensor_id: sensor_id,
@@ -372,10 +374,27 @@ async function clickLegoColor() {
     }
 }
 
-async function clickDefaultMapping() {
-    for (var i = 0; i < 9; i++) {
-        map_fields[i].value = i;
+async function clickSendLegoColor(){
+    var sensor_id = 0;
+    if (radioColor.checked) {
+        sensor_id = 61;
+    } else {
+        sensor_id = 64;
     }
+    if (sensor_id == 64) {
+        writeToStream("response 0");
+        for (var i = 0; i < 11; i++) {
+            var c = hexToRgb(color_fields[i].value);
+            //console.log(c)
+            writeToStream(`set color ${i} ${c.r} ${c.g} ${c.b}`);
+        }
+    }
+}
+
+async function clickDefaultMapping() {
+    // for (var i = 0; i < 9; i++) {
+    //     map_fields[i].value = i;
+    // }
     controller_bytes=[];
     controller_bytes.push([1,0,0,0]);
     controller_bytes.push([2,0,0,0]);
@@ -386,7 +405,7 @@ async function clickDefaultMapping() {
     controller_bytes.push([64,0,0,0]);
     controller_bytes.push([128,0,0,0]);
     controller_bytes.push([0,1,0,0]);
-    clickSetMapping();
+    SetMapping();
     updateSelectedCells();
 
 }
@@ -401,6 +420,7 @@ async function clickClearLog() {
 }
 
 async function clickGetConfig() {
+    console.log("clickGetConfig");
     config = "";
     writeToStream("show", "");
 }
@@ -410,7 +430,35 @@ async function clickSaveConfig() {
     writeToStream(`save`);
 }
 
+
+async function clickSendMapping() {
+    writeToStream("response 0"); // select non responsive interface on LMS-ESP32
+    var sensor_id = 0;
+    if (radioColor.checked) {
+        sensor_id = 61;
+    } else {
+        sensor_id = 64;
+    }
+    writeToStream(`set sensor ${sensor_id}`);
+    if (sensor_id == 64) {
+        // only for color_matrix
+        var neopixel_nrleds = field_neopixel_nrleds.value;
+        var neopixel_gpio = field_neopixel_gpio.value;
+        writeToStream(`set np_nr ${neopixel_nrleds}`);
+        writeToStream(`set np_gpio ${neopixel_gpio}`);
+
+        for (var i = 0; i < 9; i++) {
+            writeToStream(`set map ${i} ${controller_bytes[i].join(' ')}`);
+            //for (let kk=0; kk<100000000; kk++) {let a=1;}
+            // console.log(`next ${i}`)
+        }
+    }
+
+}
 async function clickSendConfig() {
+    writeToStream("response 0"); // select non responsive interface on LMS-ESP32
+    
+    console.log("clickSendConfig");
     // collect information from webpage
     var sensor_id = 0;
     if (radioColor.checked) {
@@ -426,14 +474,17 @@ async function clickSendConfig() {
         writeToStream(`set np_nr ${neopixel_nrleds}`);
         writeToStream(`set np_gpio ${neopixel_gpio}`);
 
+        for (var i = 0; i < 9; i++) {
+            writeToStream(`set map ${i} ${controller_bytes[i].join(' ')}`);
+            //for (let kk=0; kk<100000000; kk++) {let a=1;}
+            // console.log(`next ${i}`)
+        }
         for (var i = 0; i < 11; i++) {
             var c = hexToRgb(color_fields[i].value);
             //console.log(c)
             writeToStream(`set color ${i} ${c.r} ${c.g} ${c.b}`);
         }
-        for (var i = 0; i < 9; i++) {
-            writeToStream(`set map ${i} ${controller_bytes[i].join(' ')}`);
-        }
+
     }
 }
 
@@ -447,6 +498,7 @@ async function readLoop() {
     while (true) {
         const { value, done } = await reader.read();
         if (value) {
+            new_config = 0;
             var start_magic = value.indexOf("magic");
             if (start_magic >= 0) {
                 found_conf = 1;
@@ -472,10 +524,12 @@ async function readLoop() {
                 }
                 field_neopixel_nrleds.value = parsedconfig.neopixel_nrleds;
                 field_neopixel_gpio.value = parsedconfig.neopixel_gpio;
+                gridHeight=parsedconfig.neopixel_nrleds;
+                updateGrid();
                 for (var i = 0; i < 9; i++) {
                     let map= parsedconfig.mapping[i];
                     controller_bytes[i]=map; // skip first item
-                    for (let b=0; b<4; b++) {
+                    for (let b=0; b<8; b++) {
                       let bb=map[b];
                       for (let bit=0; bit<8; bit++) {
                         if (b*8+bit<gridHeight) {
@@ -487,8 +541,8 @@ async function readLoop() {
                       }
                     }
                 }
-                updateGrid();
-                clickSetMapping();
+                
+                SetMapping();
                 updateSelectedCells();
                 
                 for (var i = 0; i < 11; i++) {
@@ -501,9 +555,11 @@ async function readLoop() {
                     color_fields[i].value = colcode;
                 }
                 new_config = 0;
+               // console.log(value);
             }
             log.textContent = log.textContent + value;
             log.scrollTop = log.scrollHeight;
+       
             // console.log(value);
         }
 
@@ -527,6 +583,7 @@ function writeToStream(...lines) {
     lines.forEach((line) => {
         console.log("[SEND]", line);
         writer.write(line + "\r");
+        //let delayres =  delay(100);
     });
     writer.releaseLock();
 }
