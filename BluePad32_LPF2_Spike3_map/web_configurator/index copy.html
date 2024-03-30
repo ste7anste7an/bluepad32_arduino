@@ -364,26 +364,123 @@
               </div>
             </div>
             <div class="col-sm-4">
-            <div class="card">
-            <div id="explanation">
-              <div class="vertalign"><div class="cell selected inl"></div><span>selected led</span></div>
-              <div class="vertalign"><div class="cell_column_header inl"></div>Lego pixel</div>
-              <div class="vertalign"><div class="cell_row_header inl"></div>NeoPixel</div>
-          </div>
-         
-          <!-- <div id="griddata"></div> -->
-          <div id="grid"></div>
-          <input
-            type="button"
-            onclick="clickDefaultMapping()"
-            value="Reset to defaults"
-            name="onetoone"
-            class="btn btn-outline-primary"
-        />
+              <div class="card">
+                <div class="card-body">
+                  <h5 class="card-title mb-3">Lego pixels to NeoPixel index</h5>
+                  <div class="container p-0 mb-2">
+                    <table>
+                      <tbody>
+                        <tr>
+                          <td>
+                            <input
+                              type="number"
+                              id="map1"
+                              name="map1"
+                              min="0"
+                              max="99"
+                              value="0"
+                            />
+                          </td>
+                          <td>
+                            <input
+                              type="number"
+                              id="map2"
+                              name="map2"
+                              min="0"
+                              max="99"
+                              value="1"
+                            />
+                          </td>
+                          <td>
+                            <input
+                              type="number"
+                              id="map3"
+                              name="map3"
+                              min="0"
+                              value="2"
+                              max="99"
+                            />
+                          </td>
+                        </tr>
+                        <tr>
+                          <td>
+                            <input
+                              type="number"
+                              id="map4"
+                              name="map4"
+                              min="0"
+                              max="99"
+                              value="3"
+                            />
+                          </td>
+                          <td>
+                            <input
+                              type="number"
+                              id="map5"
+                              name="map5"
+                              min="0"
+                              max="99"
+                              value="4"
+                            />
+                          </td>
+                          <td>
+                            <input
+                              type="number"
+                              id="map6"
+                              name="map6"
+                              min="0"
+                              max="99"
+                              value="5"
+                            />
+                          </td>
+                        </tr>
+                        <tr>
+                          <td>
+                            <input
+                              type="number"
+                              id="map7"
+                              name="map7"
+                              min="0"
+                              max="99"
+                              value="6"
+                            />
+                          </td>
+                          <td>
+                            <input
+                              type="number"
+                              id="map8"
+                              name="map8"
+                              min="0"
+                              max="99"
+                              value="8"
+                            />
+                          </td>
+                          <td>
+                            <input
+                              type="number"
+                              id="map9"
+                              name="map9"
+                              min="0"
+                              max="99"
+                              value="9"
+                            />
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  <input
+                    type="button"
+                    onclick="clickDefaultMapping()"
+                    value="Reset to defaults"
+                    name="onetoone"
+                    class="btn btn-outline-primary"
+                  />
+                </div>
+              </div>
+            </div>
 
-            </div>
-            </div>
-           
+      
 
 
           </div>
@@ -449,7 +546,20 @@
           </button>
         </div>
 
-
+        <div id="explanation">
+          <div class="vertalign"><div class="cell selected inl"></div><span>selected led</span></div>
+          <div class="vertalign"><div class="cell_column_header inl"></div>controller</div>
+          <div class="vertalign"><div class="cell_row_header inl"></div>led</div>
+      </div>
+      <div id="griddata"></div>
+      <div id="grid"></div>
+      <input
+                    type="button"
+                    onclick="clickSetMapping()"
+                    value="Set mapping"
+                    name="mapping"
+                    class="btn btn-outline-primary"
+                  />
 
       </main>
       <footer class="pt-5 my-5 text-muted border-top">

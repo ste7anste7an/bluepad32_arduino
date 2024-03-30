@@ -73,13 +73,28 @@ document.addEventListener("DOMContentLoaded", () => {
 
 // code van vincent
 const gridWidth = 9; // X width
-const gridHeight = 16; // Y height
+let gridHeight = 16; // Y height
+
+field_neopixel_nrleds.value = gridHeight;
+field_neopixel_nrleds.addEventListener("change", (event) => {
+    gridHeight=field_neopixel_nrleds.value ;
+    if (gridHeight>64) {gridHeight=64; field_neopixel_nrleds.value = gridHeight;}
+    console.log(`changed: ${gridHeight}`);
+    updateGrid();
+    clickSetMapping();
+    updateSelectedCells();
+
+  });
+
 let controller_selected = [];
 let controller_val=[];
+let controller_bytes=[];
 const gridContainer = document.getElementById('grid');
-gridContainer.style.gridTemplateColumns = `repeat(${gridWidth+1}, 1fr)`;
-gridContainer.className = 'grid';
 
+function updateGrid() {
+    gridContainer.style.gridTemplateColumns = `repeat(${gridWidth+1}, 1fr)`;
+    gridContainer.className = 'grid';
+gridContainer.innerHTML = "";    
 for (let col = -1; col < gridWidth; col++) {
   const cell = document.createElement('div');
   if(col == -1) {
@@ -112,12 +127,14 @@ for (let row = 0; row < gridHeight; row++) {
       selectCell(row, col);
     });
     gridContainer.appendChild(cell);
-    if(col == 0) {
-      setCellSelected(row, col, true);
-    }
+    //if(col == 0) {
+    //  setCellSelected(row, col, true);
+   // }
   }
 }
-
+}
+updateGrid();
+clickSetMapping();
 updateSelectedCells();
 
 function cellIsSelected(row, col) {
@@ -126,8 +143,9 @@ function cellIsSelected(row, col) {
 }
 
 function updateSelectedCellsText() {
-  const gridData = document.getElementById('griddata');
-  gridData.innerHTML = '';
+  //const gridData = document.getElementById('griddata');
+  //gridData.innerHTML = '';
+  controller_bytes=[];
   for(let col=0;col<gridWidth;col++) {
       let bytes=[0,0,0,0];
       for (let b=0; b<4; b++) {
@@ -137,7 +155,8 @@ function updateSelectedCellsText() {
             }
          }
       }
-      gridData.innerHTML += `controller ${col}: ${controller_selected[col].join(', ')}  bytes: ${bytes.join(', ')}<br>`;
+      controller_bytes.push(bytes);
+   //   gridData.innerHTML += `controller ${col}: ${controller_selected[col].join(', ')}  bytes: ${bytes.join(', ')}<br>`;
   }
 
 }
@@ -166,26 +185,32 @@ function setCellSelected(row, col, selected) {
 }
 
 function selectCell(row, col) {
-  const allCellsInRow = document.querySelectorAll(`.cell[data-row='${row}']`);
-  allCellsInRow.forEach(cell => cell.classList.remove('selected'));
-  setCellSelected(row, col, true);
+    if ( cellIsSelected(row,col)) { // already selected, just deselect it
+        setCellSelected(row,col,false);
+    } else {
+        const allCellsInRow = document.querySelectorAll(`.cell[data-row='${row}']`);
+        allCellsInRow.forEach(cell => cell.classList.remove('selected'));
+        setCellSelected(row, col, true);
+    }
   updateSelectedCells();
 }
 
 async function clickSetMapping() {
     console.log("click");
-    let bytes=[8,255,0,0];
+    for (let i=0; i<9; i++) {
+    let bytes=controller_bytes[i];
     for (let b=0; b<4; b++) {
         let bb=bytes[b];
         for (let bit=0; bit<8; bit++) {
             if (b*8+bit<gridHeight) {
-                if (bb&1) {
-                    selectCell(b*8+bit,1);
-                }
+                //if (bb&1) {
+                    setCellSelected(b*8+bit,i,bb&1);
+                //}
             }
              bb>>=1;
         }
      }
+    }
      updateSelectedCells();
 
 }
@@ -244,6 +269,7 @@ function hexToRgb(hex) {
 }
 
 function parseconfig(a) {
+    console.log("=====================\n"+a+"==============================");
     var lines = a.split("\n");
     var l = lines.length;
     function getnums(a) {
@@ -262,8 +288,8 @@ function parseconfig(a) {
     var mapping = [];
     for (var j = 0; j < 9; j++) {
         var map = lines[j + 5].split(" ");
-        //col.shift();
-        //col.pop();
+        map.shift();
+        map.pop();
         var mapnums = getnums(map);
         mapping.push(mapnums);
     }
@@ -272,7 +298,7 @@ function parseconfig(a) {
     //try{
     var colors = [];
     for (var j = 0; j < 11; j++) {
-        var col = lines[j + 13].split(" ");
+        var col = lines[j + 14].split(" ");
         col.shift();
         col.pop();
         var colnums = getnums(col);
@@ -350,6 +376,19 @@ async function clickDefaultMapping() {
     for (var i = 0; i < 9; i++) {
         map_fields[i].value = i;
     }
+    controller_bytes=[];
+    controller_bytes.push([1,0,0,0]);
+    controller_bytes.push([2,0,0,0]);
+    controller_bytes.push([4,0,0,0]);
+    controller_bytes.push([8,0,0,0]);
+    controller_bytes.push([16,0,0,0]);
+    controller_bytes.push([32,0,0,0]);
+    controller_bytes.push([64,0,0,0]);
+    controller_bytes.push([128,0,0,0]);
+    controller_bytes.push([0,1,0,0]);
+    clickSetMapping();
+    updateSelectedCells();
+
 }
 
 async function clickDefault() {
@@ -393,7 +432,7 @@ async function clickSendConfig() {
             writeToStream(`set color ${i} ${c.r} ${c.g} ${c.b}`);
         }
         for (var i = 0; i < 9; i++) {
-            writeToStream(`set map ${i} ${map_fields[i].value}`);
+            writeToStream(`set map ${i} ${controller_bytes[i].join(' ')}`);
         }
     }
 }
@@ -422,7 +461,7 @@ async function readLoop() {
                 var OK = config.indexOf("OK");
                 config = config.slice(start_magic);
                 parsedconfig = parseconfig(config);
-                //console.log(parsedconfig);
+                console.log(parsedconfig);
                 config = "";
                 if (parsedconfig.sensor_id == 64) {
                     radioMatrix.checked = true;
@@ -435,22 +474,22 @@ async function readLoop() {
                 field_neopixel_gpio.value = parsedconfig.neopixel_gpio;
                 for (var i = 0; i < 9; i++) {
                     let map= parsedconfig.mapping[i];
-                
-
+                    controller_bytes[i]=map; // skip first item
                     for (let b=0; b<4; b++) {
-                      let bb=map[b+1];
+                      let bb=map[b];
                       for (let bit=0; bit<8; bit++) {
                         if (b*8+bit<gridHeight) {
-                            if (bb&1) {
-                                selectCell(b*8+bit,i);
-                            }
-            
+                           //if (bb&1) {
+                                setCellSelected(b*8+bit,i,b&1);
+                           // }
                         }
                          bb>>=1;
                       }
                     }
                 }
-                 updateSelectedCells();
+                updateGrid();
+                clickSetMapping();
+                updateSelectedCells();
                 
                 for (var i = 0; i < 11; i++) {
                     var cc = parsedconfig.colors[i];
