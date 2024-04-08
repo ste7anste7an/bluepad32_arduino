@@ -7,7 +7,7 @@
     <meta name="author" content="Anton Vanhoucke & Ste7an" />
     <title>LMS-ESP32 SPIKE BluePad Configurator</title>
     <style>
-   
+      /* Styling for the LED config Grid */
       .grid {
         display: grid;
         gap: 2px;
@@ -55,7 +55,6 @@
       .vertalign {
         display: flex;
         align-items: center;
-    
       }
       #griddata {
         width: 300px;
@@ -117,11 +116,13 @@
         </p>
 
         <div class="mb-2">
-          <button id="butConnect" class="btn btn-primary px-4">Connect</button>
-          <button id="butGetConfig" class="btn btn-outline-primary">
+          <button id="butConnect" class="btn btn-primary px-4 mt-1">
+            Connect
+          </button>
+          <button id="butGetConfig" class="btn btn-outline-primary mt-1">
             Load config from board
           </button>
-          <button id="butClearLog" class="btn btn-outline-primary">
+          <button id="butClearLog" class="btn btn-outline-primary mt-1">
             Clear connection log
           </button>
         </div>
@@ -331,17 +332,19 @@
                     onclick="clickLegoColor()"
                     value="Reset"
                     name="legocolors"
-                    class="btn btn-outline-primary"
+                    class="btn btn-outline-primary mt-2"
                     >Reset to defaults</a
-                  > <p>
-                  <a
-                    href="#"
-                    onclick="clickSendLegoColor()"
-                    value="Reset"
-                    name="sendlegocolors"
-                    class="btn btn-outline-primary"
-                    >Send colors</a
                   >
+                  <p>
+                    <a
+                      href="#"
+                      onclick="clickSendLegoColor()"
+                      value="Reset"
+                      name="sendlegocolors"
+                      class="btn btn-outline-primary mt-2"
+                      >Send colors</a
+                    >
+                  </p>
                 </div>
               </div>
             </div>
@@ -373,53 +376,71 @@
               </div>
             </div>
             <div class="col-sm-4">
-            <div class="card">
-            <div id="explanation">
-              <div class="vertalign"><div class="cell selected inl"></div><span>selected led</span></div>
-              <div class="vertalign"><div class="cell_column_header inl"></div>Lego pixel</div>
-              <div class="vertalign"><div class="cell_row_header inl"></div>NeoPixel</div>
-          </div>
-         
-          <!-- <div id="griddata"></div> -->
-          <div id="grid"></div>
-          <input
-            type="button"
-            onclick="clickDefaultMapping()"
-            value="Reset to defaults"
-            name="onetoone"
-            class="btn btn-outline-primary"
-        />
-        <a
-        href="#"
-        onclick="clickSendMapping()"
-        value="Reset"
-        name="clickSendMapping"
-        class="btn btn-outline-primary"
-        >Send Mapping</a
-      >
-
-
+              <div class="card">
+                <div class="card-body">
+                  <div id="explanation" class="row mb-2">
+                    <div class="col mt-2">
+                      <div class="vertalign">
+                        <div class="cell selected inl"></div>
+                        <span>selected led</span>
+                      </div>
+                      <div class="vertalign">
+                        <div class="cell_column_header inl"></div>
+                        Lego pixel
+                      </div>
+                      <div class="vertalign">
+                        <div class="cell_row_header inl"></div>
+                        NeoPixel
+                      </div>
+                    </div>
+                    <div class="col">
+                      <div class="row">
+                        <img
+                          src="pixel_mapping.svg"
+                          width="80px"
+                          height="80px"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <!-- <div id="griddata"></div> -->
+                  <div id="grid"></div>
+                  <input
+                    type="button"
+                    onclick="clickDefaultMapping()"
+                    value="Reset to defaults"
+                    name="onetoone"
+                    class="btn btn-outline-primary mt-2"
+                  />
+                  <a
+                    href="#"
+                    onclick="clickSendMapping()"
+                    value="Reset"
+                    name="clickSendMapping"
+                    class="btn btn-outline-primary mt-2"
+                    >Send Mapping</a
+                  >
+                </div>
+              </div>
             </div>
-            </div>
-           
-
-
           </div>
         </div>
         <h2>Send configuration</h2>
         <p class="col-md-8">
-          Tweak your configuration live, while connected to the hub, by using <strong>Send & Try Config</strong>. 
-          Once you're happy, click <strong>Send & save to flash</strong>.
-          When you switch sensor type, or when there is no connection to the hub, press the small <strong>reboot</strong> button your LMS-ESP32 board. 
+          Tweak your configuration live, while connected to the hub, by using
+          <strong>Send & Try Config</strong>. Once you're happy, click
+          <strong>Send & save to flash</strong>. When you switch sensor type, or
+          when there is no connection to the hub, press the small
+          <strong>reboot</strong> button your LMS-ESP32 board.
         </p>
         <div class="mb-5">
-          <button id="butSaveConfig" class="btn btn-primary px-4">
+          <button id="butSaveConfig" class="btn btn-primary px-4 mt-1">
             Send & save to flash
           </button>
-          <button id="butSendConfig" class="btn btn-outline-primary px-4">
+          <button id="butSendConfig" class="btn btn-outline-primary px-4 mt-1">
             Send & try config
           </button>
-          <button id="butDefault" class="btn btn-outline-primary px-4">
+          <button id="butDefault" class="btn btn-outline-primary px-4 mt-1">
             Reset to default
           </button>
         </div>
@@ -466,9 +487,6 @@
             Clear Neopixels
           </button>
         </div>
-
-
-
       </main>
       <footer class="pt-5 my-5 text-muted border-top">
         Created by Ste7an & Anton &middot; &copy; 2024
