@@ -101,7 +101,7 @@ for (let col = -1; col < gridWidth; col++) {
       cell.className = 'cellnothing';
   } else {
       cell.className = 'cell_column_header';
-      cell.innerHTML = col+1;
+      cell.innerHTML = col;
   }
   
   cell.dataset.row = -1;
@@ -125,7 +125,7 @@ for (let row = 0; row < gridHeight; row++) {
     cell.dataset.col = col;
     cell.addEventListener('click', function() {
       selectCell(row, col);
-    });
+     });
     gridContainer.appendChild(cell);
     //if(col == 0) {
     //  setCellSelected(row, col, true);
