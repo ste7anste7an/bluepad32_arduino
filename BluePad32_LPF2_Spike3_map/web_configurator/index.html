@@ -11,6 +11,7 @@
       .grid {
         display: grid;
         gap: 2px;
+        max-width: 320px;
       }
       .cell {
         width: 20px;
@@ -89,7 +90,7 @@
     <script src="script.js" defer></script>
   </head>
   <body>
-    <div class="col-lg-8 mx-auto p-3 py-md-5">
+    <div class="container-xl p-3">
       <header class="pb-2 mb-3 border-bottom">
         <a
           href="/"
@@ -168,7 +169,79 @@
             </div>
           </div>
           <div class="row collapse mb-3" id="matrix-setup">
-            <div class="col-sm-4">
+            
+            <div class="col-lg-4 col-sm-6 col-xs-12">
+              <div class="card">
+                <div class="card-body">
+                  <h5 class="card-title mb-3">Neopixel setup</h5>
+                  <div>
+                    <label>Number of leds</label>
+                    <input
+                      type="number"
+                      id="neopixel_nrleds"
+                      name="neopixel_nrleds"
+                      min="1"
+                      max="99"
+                    />
+                  </div>
+                  <div>
+                    <label>GPIO Pin</label>
+                    <input
+                      type="number"
+                      id="neopixel_gpio"
+                      name="neopixel_gpio"
+                      min="1"
+                      max="33"
+                      value="21"
+                    />
+                  </div>
+                
+                  <div id="explanation" class="row mb-2">
+                    <div class="col mt-2">
+                      <div class="vertalign">
+                        <div class="cell selected inl"></div>
+                        <span>selected led</span>
+                      </div>
+                      <div class="vertalign">
+                        <div class="cell_column_header inl"></div>
+                        Lego pixel
+                      </div>
+                      <div class="vertalign">
+                        <div class="cell_row_header inl"></div>
+                        NeoPixel
+                      </div>
+                    </div>
+                    <div class="col">
+                      <div class="row">
+                        <img
+                          src="pixel_mapping.svg"
+                          width="80px"
+                          height="80px"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <!-- <div id="griddata"></div> -->
+                  <div id="grid"></div>
+                  <input
+                    type="button"
+                    onclick="clickDefaultMapping()"
+                    value="Reset to defaults"
+                    name="onetoone"
+                    class="btn btn-outline-primary mt-2"
+                  />
+                  <a
+                    href="#"
+                    onclick="clickSendMapping()"
+                    value="Reset"
+                    name="clickSendMapping"
+                    class="btn btn-outline-primary mt-2"
+                    >Send Mapping</a
+                  >
+                </div>
+              </div>
+            </div>
+            <div class="col-lg-8 col-sm-6 col-xs-12">
               <div class="card">
                 <div class="card-body">
                   <h5 class="card-title mb-3">Color mapping</h5>
@@ -345,81 +418,6 @@
                       >Send colors</a
                     >
                   </p>
-                </div>
-              </div>
-            </div>
-            <div class="col-sm-4">
-              <div class="card">
-                <div class="card-body">
-                  <h5 class="card-title mb-3">Neopixel setup</h5>
-                  <div>
-                    <label>Number of leds</label>
-                    <input
-                      type="number"
-                      id="neopixel_nrleds"
-                      name="neopixel_nrleds"
-                      min="1"
-                      max="99"
-                    />
-                  </div>
-                  <div>
-                    <label>GPIO Pin</label>
-                    <input
-                      type="number"
-                      id="neopixel_gpio"
-                      name="neopixel_gpio"
-                      min="1"
-                      max="33"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div class="col-sm-4">
-              <div class="card">
-                <div class="card-body">
-                  <div id="explanation" class="row mb-2">
-                    <div class="col mt-2">
-                      <div class="vertalign">
-                        <div class="cell selected inl"></div>
-                        <span>selected led</span>
-                      </div>
-                      <div class="vertalign">
-                        <div class="cell_column_header inl"></div>
-                        Lego pixel
-                      </div>
-                      <div class="vertalign">
-                        <div class="cell_row_header inl"></div>
-                        NeoPixel
-                      </div>
-                    </div>
-                    <div class="col">
-                      <div class="row">
-                        <img
-                          src="pixel_mapping.svg"
-                          width="80px"
-                          height="80px"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                  <!-- <div id="griddata"></div> -->
-                  <div id="grid"></div>
-                  <input
-                    type="button"
-                    onclick="clickDefaultMapping()"
-                    value="Reset to defaults"
-                    name="onetoone"
-                    class="btn btn-outline-primary mt-2"
-                  />
-                  <a
-                    href="#"
-                    onclick="clickSendMapping()"
-                    value="Reset"
-                    name="clickSendMapping"
-                    class="btn btn-outline-primary mt-2"
-                    >Send Mapping</a
-                  >
                 </div>
               </div>
             </div>
