@@ -1,3 +1,6 @@
+// This is the version that works for Spike prime Legacy blocks.
+
+
 /*
 
   from pybricks.iodevices import PUPDevice
@@ -16,7 +19,7 @@
 
 
 // uncomment the following line if building for PyBricks
-#define PYBRICKS 1
+//#define PYBRICKS 1
 
 
 #include <Bluepad32.h>
@@ -78,18 +81,18 @@ void onConnectedGamepad(GamepadPtr gp) {
 
       if (bt_filter) {
         Serial.printf("received: %02X:%02X:%02X:%02X:%02X:%02X ", properties.btaddr[0], properties.btaddr[1], properties.btaddr[2], properties.btaddr[3], properties.btaddr[4], properties.btaddr[5]);
-        Serial.printf("filtered: %02X:%02X:%02X:%02X:%02X:%02X\n", bt_allow[0], bt_allow[1], bt_allow[2], bt_allow[3], bt_allow[4], bt_allow[5]);
+        Serial.printf("filtered: %02X:%02X:%02X:%02X:%02X:%02X\r\n", bt_allow[0], bt_allow[1], bt_allow[2], bt_allow[3], bt_allow[4], bt_allow[5]);
         if (memcmp(bt_allow, properties.btaddr, 6) == 0) { // bt_allow
           myGamepads[i] = gp;
           foundEmptySlot = true;
           Serial.printf("bt_filtered: allowed\n");
         } else {
           gp->disconnect();
-          Serial.printf("bt_filtered: gamepad disconnected\n");
+          Serial.printf("bt_filtered: gamepad disconnected\r\n");
         }
         break;
       } else {
-        Serial.printf("un_filtered: connected\n");
+        Serial.printf("un_filtered: connected\r\n");
         myGamepads[i] = gp;
         foundEmptySlot = true;
       }
@@ -289,13 +292,13 @@ void setup() {
   sensor.create_mode("GPLED", true, DATA8, 16, 5, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "RAW", ABSOLUTE, ABSOLUTE); //map in and map out unit = "XYBD" = x, y, buttons, d-pad
   sensor.create_mode("GPSRV", true, DATA8, 16, 5, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "XYBD", ABSOLUTE, ABSOLUTE); //map in and map out unit = "XYBD" = x, y, buttons, d-pad
 //  sensor.create_mode("GPIIC", true, DATA8, 16, 5, 0, 0.0f, 512.0f, 0.0f, 1024.0f, 0.0f, 512.0f, "XYBD", ABSOLUTE, ABSOLUTE); //map in and map out unit = "XYBD" = x, y, buttons, d-pad
-
+sensor.get_mode(0)->setCallback(neopixel_callback);  // attach call back function to mode 0
+  sensor.get_mode(1)->setCallback(servo_callback);  // attach call back function to mode 1
+ 
 #else
   sensor.create_mode("GAMEPAD", true, DATA16, 6, 5, 0, 0.0f, 512.0f, 0.0f, 1024.0f, 0.0f, 512.0f, "XYBD", ABSOLUTE, ABSOLUTE); //map in and map out unit = "XYBD" = x, y, buttons, d-pad
 #endif
 
-  sensor.get_mode(0)->setCallback(neopixel_callback);  // attach call back function to mode 0
-  sensor.get_mode(1)->setCallback(servo_callback);  // attach call back function to mode 1
   //sensor.get_mode(2)->setCallback(i2c_callback);  // attach call back function to mode 1
 
   Wire.begin(5, 4); // sda=pin(5), scl=Pin(4)
@@ -314,10 +317,14 @@ void setup() {
   servo2.attach(servo2Pin, minUs, maxUs);
   servo3.attach(servo3Pin, minUs, maxUs);
   servo4.attach(servo4Pin, minUs, maxUs);
-
-  Serial.printf("Firmware: %s\n", BP32.firmwareVersion());
+#ifdef pybricks
+  Serial.println("Bluepad32 LPF2 for PyBricks");
+#else 
+  Serial.println("Bluepad32 LPF2 for legacy SPIKE");
+#endif
+  Serial.printf("Firmware: %s\r\n", BP32.firmwareVersion());
   const uint8_t *addr = BP32.localBdAddress();
-  Serial.printf("BD Addr: %2X:%2X:%2X:%2X:%2X:%2X\n", addr[0], addr[1], addr[2],
+  Serial.printf("BD Addr: %2X:%2X:%2X:%2X:%2X:%2X\r\n", addr[0], addr[1], addr[2],
                 addr[3], addr[4], addr[5]);
 
   // Setup the Bluepad32 callbacks
@@ -365,25 +372,40 @@ void loop() {
       //for (int i = 0; i < BP32_MAX_GAMEPADS; i++) {
       GamepadPtr myGamepad = myGamepads[0];
 
-      if (myGamepad && myGamepad->isConnected()) {
-        //myGamepad->buttons(),myGamepad->dpad(),
-        bb[0] = (myGamepad->axisX()) & 0xff;
-        bb[1] = (myGamepad->axisX()) >> 8;
-        bb[2] = (myGamepad->axisY()) & 0xff;
-        bb[3] = (myGamepad->axisY()) >> 8;
-        bb[4] = (myGamepad->axisRX()) & 0xff;
-        bb[5] = (myGamepad->axisRX()) >> 8;
-        bb[6] = (myGamepad->axisRY()) & 0xff;
-        bb[7] = (myGamepad->axisRY()) >> 8;
-        bb[8] = (myGamepad->buttons()) & 0xff;
-        bb[9] = (myGamepad->buttons()) >> 8;
-        bb[10] = (myGamepad->dpad()) & 0xff;
-        bb[11] = (myGamepad->dpad()) >> 8;
+ //for (int i = 0; i < BP32_MAX_GAMEPADS; i++) {
 
-      }
-      int nr_bytes = sensor.get_mode(mode)->sample_size;
-      sensor.send_data8(bb, nr_bytes);
-    
+ 
+        if (myGamepad && myGamepad->isConnected()) {
+          //myGamepad->buttons(),myGamepad->dpad(),
+          bb[0]=(myGamepad->axisX())&0xff;
+          bb[1]=(myGamepad->axisX())>>8;
+          bb[2]=(myGamepad->axisY())&0xff;
+          bb[3]=(myGamepad->axisY())>>8;
+          bb[4]=(myGamepad->axisRX())&0xff;
+          bb[5]=(myGamepad->axisRX())>>8;
+          bb[6]=(myGamepad->axisRY())&0xff;
+          bb[7]=(myGamepad->axisRY())>>8;
+          bb[8]=(myGamepad->buttons())&0xff;
+          bb[9]=(myGamepad->buttons())>>8;
+          bb[10]=(myGamepad->dpad())&0xff;
+          bb[11]=(myGamepad->dpad())>>8;
+          bb[12]=0;
+          bb[13]=0;
+          bb[14]=0;
+          bb[15]=0;
+          
+          //Serial.printf("gp:%d %d \n", bb[4],bb[5]);
+
+/*
+ * 
+ * 
+ */
+
+          
+        }
+        sensor.send_data8(bb,16);
+        
+      
 
 
     last_reading = millis();
