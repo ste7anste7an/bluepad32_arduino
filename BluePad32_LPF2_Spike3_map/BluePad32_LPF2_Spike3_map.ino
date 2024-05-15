@@ -36,13 +36,13 @@
 #include <string.h>
 
 #include "LPF2.h"
-#include <Wire.h>
+//#include <Wire.h>
 #include <Adafruit_NeoPixel.h>
 // v1.12.0 can be installed via library manager
 
 GamepadPtr myGamepads[BP32_MAX_GAMEPADS];
-#define RXD2 18
-#define TXD2 19
+#define RXD2 18 // 8 for v2
+#define TXD2 19 // 7 for v2
 #define COLOR_MATRIX 0x40
 #define COLOR_SENSOR 0x3D
 #define DEFAULT_SENSOR COLOR_SENSOR
@@ -127,7 +127,7 @@ struct Sensor {
 // use pointer allows to dynamically change nrumber of leds or pin
 // change strip.begin() to strip->begin(), etc.
 // delete object before initiating a new one
-#define LED_PIN 21
+#define LED_PIN 25
 #define LED_COUNT 16
 Adafruit_NeoPixel *neopixel_strip = new Adafruit_NeoPixel(LED_COUNT, LED_PIN);  //, NEO_GRB + NEO_KHZ800);
 
@@ -552,7 +552,7 @@ void setup() {
   BP32.forgetBluetoothKeys();
 
 
-
+  
   Serial.println("LOG: BluePad32 for SPIKEv3, see https://github.com/antonvh/PUPRemote/blob/main/examples/bluepad/spike3/README.md");
   Serial.printf("LOG: Firmware: %s\r\n", BP32.firmwareVersion());
   const uint8_t *addr = BP32.localBdAddress();

@@ -53,7 +53,7 @@ GamepadPtr myGamepads[BP32_MAX_GAMEPADS];
 #define LED_PIN 12
 #define LED_COUNT 16
 
-Adafruit_NeoPixel* strip = new Adafruit_NeoPixel(LED_COUNT, LED_PIN); //, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel *strip = new Adafruit_NeoPixel(LED_COUNT, LED_PIN);  //, NEO_GRB + NEO_KHZ800);
 
 Servo servo1;
 Servo servo2;
@@ -150,65 +150,61 @@ struct Sensor {
 Adafruit_NeoPixel *neopixel_strip = new Adafruit_NeoPixel(LED_COUNT, LED_PIN);  //, NEO_GRB + NEO_KHZ800);
 
 
-#define FILL   0x10
-#define ZERO   0x20
-#define SET    0x30
+#define FILL 0x10
+#define ZERO 0x20
+#define SET 0x30
 #define CONFIG 0x40
-#define WRITE  0x80
+#define WRITE 0x80
 
 void pybricks_neopixel_callback(byte buf[], byte s) {
   // Serial.println();
   byte num_pixels = strip->numPixels();
-  byte cmd = buf[0] & 0x7f; // all but bit 7 (write) and strip lower 4 bits.
+  byte cmd = buf[0] & 0x7f;  // all but bit 7 (write) and strip lower 4 bits.
   byte write_leds = buf[0] & 0x80;
-   Serial.printf("neopixel: cmd %02X write_leds %02X\r\n",cmd,write_leds);
-  for (int i=0; i<s; i++) Serial.printf("%02X ",buf[i]);
+  Serial.printf("neopixel: cmd %02X write_leds %02X\r\n", cmd, write_leds);
+  for (int i = 0; i < s; i++) Serial.printf("%02X ", buf[i]);
   Serial.printf("\n");
   if (cmd == FILL) {
-    for (int i = 0; i < num_pixels; i++ ) {
-       strip->setPixelColor(i, buf[1], buf[2], buf[3]);
-     }
-  }
-  else if (cmd == ZERO) {
-    for (int i = 0; i < num_pixels; i++ ) {
-       strip->setPixelColor(i, 0,0,0);
-     }
-  }
-  else if (cmd == SET) {
-    // [SET][nr_leds][start_led][r0,g0,b0][r1,g1,b1][r2,g2,b2][r3,g3,b3][0]
-    byte nr_leds =buf[1];
-    byte start_led = buf[2];
-     Serial.printf("Neopixel SET %d %d num_pixels %d\r\n",nr_leds,start_led,num_pixels);
-    if ((nr_leds==0) or (nr_leds>4)) nr_leds=4;
-    if (start_led+nr_leds<=num_pixels) {
-      for (int i = 0; i < nr_leds; i++ ) {
-       // Serial.printf("set_led: %d %d %d %d \r\n",i+start_led, buf[3+i*3], buf[4+i*3], buf[5+i*3]);
-       strip->setPixelColor(i+start_led, buf[3+i*3], buf[4+i*3], buf[5+i*3]);
-      } 
+    for (int i = 0; i < num_pixels; i++) {
+      strip->setPixelColor(i, buf[1], buf[2], buf[3]);
     }
-  }
-  else if (cmd == CONFIG) {
+  } else if (cmd == ZERO) {
+    for (int i = 0; i < num_pixels; i++) {
+      strip->setPixelColor(i, 0, 0, 0);
+    }
+  } else if (cmd == SET) {
+    // [SET][nr_leds][start_led][r0,g0,b0][r1,g1,b1][r2,g2,b2][r3,g3,b3][0]
+    byte nr_leds = buf[1];
+    byte start_led = buf[2];
+    Serial.printf("Neopixel SET %d %d num_pixels %d\r\n", nr_leds, start_led, num_pixels);
+    if ((nr_leds == 0) or (nr_leds > 4)) nr_leds = 4;
+    if (start_led + nr_leds <= num_pixels) {
+      for (int i = 0; i < nr_leds; i++) {
+        // Serial.printf("set_led: %d %d %d %d \r\n",i+start_led, buf[3+i*3], buf[4+i*3], buf[5+i*3]);
+        strip->setPixelColor(i + start_led, buf[3 + i * 3], buf[4 + i * 3], buf[5 + i * 3]);
+      }
+    }
+  } else if (cmd == CONFIG) {
     delete strip;
-    strip = new Adafruit_NeoPixel(buf[1], buf[2]); //nr_leds, pin
+    strip = new Adafruit_NeoPixel(buf[1], buf[2]);  //nr_leds, pin
   }
   if (write_leds & WRITE) {
     // Serial.println("Write leds");
     strip->show();
-  } 
- 
+  }
 }
 
 
 void pybricks_servo_callback(byte buf[], byte s) {
   byte nr_short = int(s / 2);
   short vals[nr_short];
-  Serial.printf("size %d, nr short %d\n",s,nr_short);
+  Serial.printf("size %d, nr short %d\n", s, nr_short);
   for (int i = 0; i < nr_short; i++) {
-    vals[i] = buf[i * 2] + buf[i * 2 + 1] * 256; // in Block SPIKE language only up to 128 can be used:  vals[i]=buf[i*2]+buf[i*2+1]*128;
-    Serial.printf("vals[%d]=%d\n",i,vals[i]);
+    vals[i] = buf[i * 2] + buf[i * 2 + 1] * 256;  // in Block SPIKE language only up to 128 can be used:  vals[i]=buf[i*2]+buf[i*2+1]*128;
+    Serial.printf("vals[%d]=%d\n", i, vals[i]);
   }
 
-   Serial.printf("servo %d %d %d %d\n",vals[0],vals[1],vals[2],vals[3]);
+  Serial.printf("servo %d %d %d %d\n", vals[0], vals[1], vals[2], vals[3]);
   servo1.write(vals[0]);
   servo2.write(vals[1]);
   servo3.write(vals[2]);
@@ -551,9 +547,9 @@ void config_sensor() {
     //lpf2_sensor->create_mode("POS", true, DATA32, 1, 4, 0, -360.0f, 360.0f, -100.0f, 100.0f, -360.0f, 360.0f, "PCT", ABSOLUTE, ABSOLUTE);   //map in and map out unit = "XYBD" = x, y, buttons, d-pad
 
     lpf2_sensor->create_mode("APOS", true, DATA32, 1, 4, 0, -180.0f, 179.0f, -100.0f, 100.0f, -180.0f, 179.0f, "PCT", ABSOLUTE, ABSOLUTE);  //map in and map out unit = "XYBD" = x, y, buttons, d-pad
-    lpf2_sensor->get_mode(1)->setCallback(pybricks_neopixel_callback);  // attach call back function to mode 0
-    lpf2_sensor->get_mode(2)->setCallback(pybricks_servo_callback);  // attach call back function to mode 1
-  
+    lpf2_sensor->get_mode(1)->setCallback(pybricks_neopixel_callback);                                                                      // attach call back function to mode 0
+    lpf2_sensor->get_mode(2)->setCallback(pybricks_servo_callback);                                                                         // attach call back function to mode 1
+
     Serial.printf("LOG: This sensor is configured as Color Sensor\r\n");
   } else {
     sensor_conf.sensor_id = COLOR_MATRIX;
@@ -562,14 +558,14 @@ void config_sensor() {
 
     //lpf2_sensor->create_mode("LEV O\x00\x80\x00\x00\x00\x05\x04", true, DATA8, 8, 1, 0, -9.0f, 9.0f, -100.0f, 100.0f, -9.0f, 9.0f, "PCT", 0, 0x50);  //map in and map out unit = "XYBD" = x, y, buttons, d-pad
     //lpf2_sensor->create_mode("COL O\x00\x80\x00\x00\x00\x05\x04", true, DATA8, 1, 2, 0, 0.0f, 10.0f, 0.0f, 100.0f, 0.0f, 10.0f, "PCT", 0, 0x44);     //map in and map out unit = "XYBD" = x, y, buttons, d-pad
-    lpf2_sensor->create_mode("LEV O\x00\x80\x00\x00\x00\x05\x04", true, DATA8, 16, 5, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "RAW", ABSOLUTE, ABSOLUTE);    //map in and map out unit = "XYBD" = x, y, buttons, d-pad
-    lpf2_sensor->create_mode("COL O\x00\x80\x00\x00\x00\x05\x04", true,  DATA8, 16, 5, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "RAW", ABSOLUTE, ABSOLUTE);       //map in and map out unit = "XYBD" = x, y, buttons, d-pad
-    lpf2_sensor->create_mode("PIX O\x00\x80\x00\x00\x00\x05\x04", true, DATA8, 9, 3, 0, 0.0f, 170.0f, 0.0f, 100.0f, 0.0f, 170.0f, "   ", 0, 0x10);   //map in and map out unit = "XYBD" = x, y, buttons, d-pad
-    lpf2_sensor->create_mode("TRANS\x00\x80\x00\x00\x00\x05\x04", true, DATA8, 1, 1, 0, 0.0f, 2.0f, 0.0f, 100.0f, 0.0f, 2.0f, "   ", 0, 0x10);       //map in and map out unit = "XYBD" = x, y, buttons, d-pad
-    lpf2_sensor->get_mode(0)->setCallback(pybricks_neopixel_callback);  // attach call back function to mode 0
-    lpf2_sensor->get_mode(1)->setCallback(pybricks_servo_callback);  // attach call back function to mode 1
-  
-    lpf2_sensor->get_mode(2)->setCallback(neopixel_callback);                                                                                        // attach call back function to mode 0
+    lpf2_sensor->create_mode("LEV O\x00\x80\x00\x00\x00\x05\x04", true, DATA8, 16, 5, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "RAW", ABSOLUTE, ABSOLUTE);  //map in and map out unit = "XYBD" = x, y, buttons, d-pad
+    lpf2_sensor->create_mode("COL O\x00\x80\x00\x00\x00\x05\x04", true, DATA8, 16, 5, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "RAW", ABSOLUTE, ABSOLUTE);  //map in and map out unit = "XYBD" = x, y, buttons, d-pad
+    lpf2_sensor->create_mode("PIX O\x00\x80\x00\x00\x00\x05\x04", true, DATA8, 9, 3, 0, 0.0f, 170.0f, 0.0f, 100.0f, 0.0f, 170.0f, "   ", 0, 0x10);              //map in and map out unit = "XYBD" = x, y, buttons, d-pad
+    lpf2_sensor->create_mode("TRANS\x00\x80\x00\x00\x00\x05\x04", true, DATA8, 1, 1, 0, 0.0f, 2.0f, 0.0f, 100.0f, 0.0f, 2.0f, "   ", 0, 0x10);                  //map in and map out unit = "XYBD" = x, y, buttons, d-pad
+    lpf2_sensor->get_mode(0)->setCallback(neopixel_callback);                                                                                                   // attach call back function to mode 0
+    lpf2_sensor->get_mode(1)->setCallback(pybricks_servo_callback);                                                                                             // attach call back function to mode 1
+
+    lpf2_sensor->get_mode(2)->setCallback(neopixel_callback);  // attach call back function to mode 0
 
     Serial.printf("LOG: This sensor is configured as Color Matrix\r\n");
     Serial.printf("LOG: NeoPixel on GPIO %d\r\n", sensor_conf.neopixel_gpio);
@@ -634,14 +630,14 @@ void setup() {
   // apply these values to the sensor
   config_sensor();
 
-ESP32PWM::allocateTimer(0);
+  ESP32PWM::allocateTimer(0);
   ESP32PWM::allocateTimer(1);
   ESP32PWM::allocateTimer(2);
   ESP32PWM::allocateTimer(3);
-  servo1.setPeriodHertz(50);      // Standard 50hz servo
-  servo2.setPeriodHertz(50);      // Standard 50hz servo
-  servo3.setPeriodHertz(50);      // Standard 50hz servo
-  servo4.setPeriodHertz(50);      // Standard 50hz servo
+  servo1.setPeriodHertz(50);  // Standard 50hz servo
+  servo2.setPeriodHertz(50);  // Standard 50hz servo
+  servo3.setPeriodHertz(50);  // Standard 50hz servo
+  servo4.setPeriodHertz(50);  // Standard 50hz servo
   servo1.attach(servo1Pin, minUs, maxUs);
   servo2.attach(servo2Pin, minUs, maxUs);
   servo3.attach(servo3Pin, minUs, maxUs);
@@ -781,15 +777,15 @@ void loop() {
         //sensor.send_data8(bb, nr_bytes);
         lpf2_sensor->send_data8(bb, nr_bytes);
       } else {  // COLOR SENSOR
-        
+
         //for (int i = 0; i < BP32_MAX_GAMEPADS; i++) {
         GamepadPtr myGamepad = myGamepads[0];
 
         if (myGamepad && myGamepad->isConnected()) {
           if (last_mode == 0) {  // spike3
-short bb[16];
-        byte a, b;
-        memset(bb, 0, 16);
+            short bb[16];
+            byte a, b;
+            memset(bb, 0, 16);
             a = clip((myGamepad->axisX() + 512), 0, 1023) >> 2;
             b = clip((myGamepad->axisY() + 512), 0, 1023) >> 2;
             bb[0] = a + b * 256;
@@ -810,12 +806,12 @@ short bb[16];
             // }
             // Serial.printf("\n");
             int nr_bytes = lpf2_sensor->get_mode(mode)->sample_size;
-        //sensor.send_data8(bb, nr_bytes);
-        lpf2_sensor->send_data16((short *)bb, nr_bytes);
+            //sensor.send_data8(bb, nr_bytes);
+            lpf2_sensor->send_data16((short *)bb, nr_bytes);
           } else {  //pybricks modi
-           byte bb[16];
-        int8_t a, b;
-        memset(bb, 0, 16);
+            byte bb[16];
+            int8_t a, b;
+            memset(bb, 0, 16);
             bb[0] = (myGamepad->axisX()) & 0xff;
             bb[1] = (myGamepad->axisX()) >> 8;
             bb[2] = (myGamepad->axisY()) & 0xff;
@@ -829,11 +825,10 @@ short bb[16];
             bb[10] = (myGamepad->dpad()) & 0xff;
             bb[11] = (myGamepad->dpad()) >> 8;
             int nr_bytes = lpf2_sensor->get_mode(mode)->sample_size;
-        //sensor.send_data8(bb, nr_bytes);
-        lpf2_sensor->send_data8(bb, nr_bytes);
+            //sensor.send_data8(bb, nr_bytes);
+            lpf2_sensor->send_data8(bb, nr_bytes);
           }
         }
-        
       }
 
 

@@ -19,7 +19,7 @@
 
 
 // uncomment the following line if building for PyBricks
-//#define PYBRICKS 1
+#define PYBRICKS 1
 
 
 #include <Bluepad32.h>
@@ -27,26 +27,29 @@
 #include <stdio.h>
 
 #include <LPF2.h>
-#include <Wire.h>
+//#include <Wire.h>
 #include <Adafruit_NeoPixel.h>
 #include <ESP32Servo.h>
+//GamepadPtr myGamepads[BP32_MAX_GAMEPADS];
+GamepadPtr myGamepads[1];
 
-GamepadPtr myGamepads[BP32_MAX_GAMEPADS];
-#define RXD2 18
-#define TXD2 19
+//#define RXD2 18
+//#define TXD2 19
+#define RXD2 8
+#define TXD2 7
 EV3UARTEmulation sensor(RXD2, TXD2, 62, 115200);
 
-char bt_allow[6] = {0, 0, 0, 0, 0, 0};
+char bt_allow[6] = { 0, 0, 0, 0, 0, 0 };
 bool bt_filter = false;
 
-int debug = 0; // global debug; if 1 -> print debug.
-#define LED_PIN 12
+int debug = 0;  // global debug; if 1 -> print debug.
+#define LED_PIN 27
 #define LED_COUNT 64
 
 // use pointer allows to dynamically change nrumber of leds or pin
 // change strip.begin() to strip->begin(), etc.
 // delete object before initiating a new one
-Adafruit_NeoPixel* strip = new Adafruit_NeoPixel(LED_COUNT, LED_PIN); //, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel* strip = new Adafruit_NeoPixel(LED_COUNT, LED_PIN);  //, NEO_GRB + NEO_KHZ800);
 
 Servo servo1;
 Servo servo2;
@@ -66,14 +69,14 @@ int maxUs = 2000;
 // Up to 4 gamepads can be connected at the same time.
 void onConnectedGamepad(GamepadPtr gp) {
   bool foundEmptySlot = false;
-  for (int i = 0; i < BP32_MAX_GAMEPADS; i++) {
+  for (int i = 0; i < 1; i++) {
     if (myGamepads[i] == nullptr && !foundEmptySlot) {
       Serial.printf("CALLBACK: Gamepad is connected, index=%d\n", i);
       // Additionally, you can get certain gamepad properties like:
       // Model, VID, PID, BTAddr, flags, etc.
       GamepadProperties properties = gp->getProperties();
-      char btaddr_str[18]; // Allocate space for the formatted string (six 2-digit hexadecimal numbers plus five colons)
-      sprintf(btaddr_str, "%02X:%02X:%02X:%02X:%02X:%02X", properties.btaddr[0], properties.btaddr[1], properties.btaddr[2], properties.btaddr[3], properties.btaddr[4], properties.btaddr[5]); // Format the address as a string
+      char btaddr_str[18];                                                                                                                                                                       // Allocate space for the formatted string (six 2-digit hexadecimal numbers plus five colons)
+      sprintf(btaddr_str, "%02X:%02X:%02X:%02X:%02X:%02X", properties.btaddr[0], properties.btaddr[1], properties.btaddr[2], properties.btaddr[3], properties.btaddr[4], properties.btaddr[5]);  // Format the address as a string
 
       Serial.printf("Gamepad model: %s, VID=0x%04x, PID=0x%04x  bt_addr=%s\n",
                     gp->getModelName().c_str(), properties.vendor_id,
@@ -82,7 +85,7 @@ void onConnectedGamepad(GamepadPtr gp) {
       if (bt_filter) {
         Serial.printf("received: %02X:%02X:%02X:%02X:%02X:%02X ", properties.btaddr[0], properties.btaddr[1], properties.btaddr[2], properties.btaddr[3], properties.btaddr[4], properties.btaddr[5]);
         Serial.printf("filtered: %02X:%02X:%02X:%02X:%02X:%02X\r\n", bt_allow[0], bt_allow[1], bt_allow[2], bt_allow[3], bt_allow[4], bt_allow[5]);
-        if (memcmp(bt_allow, properties.btaddr, 6) == 0) { // bt_allow
+        if (memcmp(bt_allow, properties.btaddr, 6) == 0) {  // bt_allow
           myGamepads[i] = gp;
           foundEmptySlot = true;
           Serial.printf("bt_filtered: allowed\n");
@@ -107,7 +110,7 @@ void onConnectedGamepad(GamepadPtr gp) {
 void onDisconnectedGamepad(GamepadPtr gp) {
   bool foundGamepad = false;
 
-  for (int i = 0; i < BP32_MAX_GAMEPADS; i++) {
+  for (int i = 0; i < 1; i++) {
     if (myGamepads[i] == gp) {
       Serial.printf("CALLBACK: Gamepad is disconnected from index=%d\n", i);
       myGamepads[i] = nullptr;
@@ -219,53 +222,49 @@ void onDisconnectedGamepad(GamepadPtr gp) {
 
 uint8_t old_led = 0, rumble_force, rumble_duration;
 
-#define FILL   0x10
-#define ZERO   0x20
-#define SET    0x30
+#define FILL 0x10
+#define ZERO 0x20
+#define SET 0x30
 #define CONFIG 0x40
-#define WRITE  0x80
+#define WRITE 0x80
 
 
 void neopixel_callback(byte buf[], byte s) {
   // Serial.println();
   byte num_pixels = strip->numPixels();
-  byte cmd = buf[0] & 0x7f; // all but bit 7 (write) and strip lower 4 bits.
+  byte cmd = buf[0] & 0x7f;  // all but bit 7 (write) and strip lower 4 bits.
   byte write_leds = buf[0] & 0x80;
-   Serial.printf("neopixel: cmd %02X write_leds %02X\r\n",cmd,write_leds);
-  for (int i=0; i<s; i++) Serial.printf("%02X ",buf[i]);
+  Serial.printf("neopixel: cmd %02X write_leds %02X\r\n", cmd, write_leds);
+  for (int i = 0; i < s; i++) Serial.printf("%02X ", buf[i]);
   Serial.printf("\n");
   if (cmd == FILL) {
-    for (int i = 0; i < num_pixels; i++ ) {
-       strip->setPixelColor(i, buf[1], buf[2], buf[3]);
-     }
-  }
-  else if (cmd == ZERO) {
-    for (int i = 0; i < num_pixels; i++ ) {
-       strip->setPixelColor(i, 0,0,0);
-     }
-  }
-  else if (cmd == SET) {
-    // [SET][nr_leds][start_led][r0,g0,b0][r1,g1,b1][r2,g2,b2][r3,g3,b3][0]
-    byte nr_leds =buf[1];
-    byte start_led = buf[2];
-     Serial.printf("Neopixel SET %d %d num_pixels %d\r\n",nr_leds,start_led,num_pixels);
-    if ((nr_leds==0) or (nr_leds>4)) nr_leds=4;
-    if (start_led+nr_leds<=num_pixels) {
-      for (int i = 0; i < nr_leds; i++ ) {
-       // Serial.printf("set_led: %d %d %d %d \r\n",i+start_led, buf[3+i*3], buf[4+i*3], buf[5+i*3]);
-       strip->setPixelColor(i+start_led, buf[3+i*3], buf[4+i*3], buf[5+i*3]);
-      } 
+    for (int i = 0; i < num_pixels; i++) {
+      strip->setPixelColor(i, buf[1], buf[2], buf[3]);
     }
-  }
-  else if (cmd == CONFIG) {
+  } else if (cmd == ZERO) {
+    for (int i = 0; i < num_pixels; i++) {
+      strip->setPixelColor(i, 0, 0, 0);
+    }
+  } else if (cmd == SET) {
+    // [SET][nr_leds][start_led][r0,g0,b0][r1,g1,b1][r2,g2,b2][r3,g3,b3][0]
+    byte nr_leds = buf[1];
+    byte start_led = buf[2];
+    Serial.printf("Neopixel SET %d %d num_pixels %d\r\n", nr_leds, start_led, num_pixels);
+    if ((nr_leds == 0) or (nr_leds > 4)) nr_leds = 4;
+    if (start_led + nr_leds <= num_pixels) {
+      for (int i = 0; i < nr_leds; i++) {
+        // Serial.printf("set_led: %d %d %d %d \r\n",i+start_led, buf[3+i*3], buf[4+i*3], buf[5+i*3]);
+        strip->setPixelColor(i + start_led, buf[3 + i * 3], buf[4 + i * 3], buf[5 + i * 3]);
+      }
+    }
+  } else if (cmd == CONFIG) {
     delete strip;
-    strip = new Adafruit_NeoPixel(buf[1], buf[2]); //nr_leds, pin
+    strip = new Adafruit_NeoPixel(buf[1], buf[2]);  //nr_leds, pin
   }
   if (write_leds & WRITE) {
     // Serial.println("Write leds");
     strip->show();
-  } 
- 
+  }
 }
 
 
@@ -274,7 +273,7 @@ void servo_callback(byte buf[], byte s) {
   short vals[nr_short];
   //Serial.printf("size %d, nr short %d\n",s,nr_short);
   for (int i = 0; i < nr_short; i++) {
-    vals[i] = buf[i * 2] + buf[i * 2 + 1] * 256; // in Block SPIKE language only up to 128 can be used:  vals[i]=buf[i*2]+buf[i*2+1]*128;
+    vals[i] = buf[i * 2] + buf[i * 2 + 1] * 256;  // in Block SPIKE language only up to 128 can be used:  vals[i]=buf[i*2]+buf[i*2+1]*128;
     //Serial.printf("vals[%d]=%d\n",i,vals[i]);
   }
 
@@ -289,41 +288,41 @@ void servo_callback(byte buf[], byte s) {
 void setup() {
   Serial.begin(115200);
 #ifdef PYBRICKS
-  sensor.create_mode("GPLED", true, DATA8, 16, 5, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "RAW", ABSOLUTE, ABSOLUTE); //map in and map out unit = "XYBD" = x, y, buttons, d-pad
-  sensor.create_mode("GPSRV", true, DATA8, 16, 5, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "XYBD", ABSOLUTE, ABSOLUTE); //map in and map out unit = "XYBD" = x, y, buttons, d-pad
-//  sensor.create_mode("GPIIC", true, DATA8, 16, 5, 0, 0.0f, 512.0f, 0.0f, 1024.0f, 0.0f, 512.0f, "XYBD", ABSOLUTE, ABSOLUTE); //map in and map out unit = "XYBD" = x, y, buttons, d-pad
-sensor.get_mode(0)->setCallback(neopixel_callback);  // attach call back function to mode 0
-  sensor.get_mode(1)->setCallback(servo_callback);  // attach call back function to mode 1
- 
+  sensor.create_mode("GPLED", true, DATA8, 16, 5, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "RAW", ABSOLUTE, ABSOLUTE);   //map in and map out unit = "XYBD" = x, y, buttons, d-pad
+  sensor.create_mode("GPSRV", true, DATA8, 16, 5, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "XYBD", ABSOLUTE, ABSOLUTE);  //map in and map out unit = "XYBD" = x, y, buttons, d-pad
+  //  sensor.create_mode("GPIIC", true, DATA8, 16, 5, 0, 0.0f, 512.0f, 0.0f, 1024.0f, 0.0f, 512.0f, "XYBD", ABSOLUTE, ABSOLUTE); //map in and map out unit = "XYBD" = x, y, buttons, d-pad
+  sensor.get_mode(0)->setCallback(neopixel_callback);  // attach call back function to mode 0
+  sensor.get_mode(1)->setCallback(servo_callback);     // attach call back function to mode 1
+
 #else
-  sensor.create_mode("GAMEPAD", true, DATA16, 6, 5, 0, 0.0f, 512.0f, 0.0f, 1024.0f, 0.0f, 512.0f, "XYBD", ABSOLUTE, ABSOLUTE); //map in and map out unit = "XYBD" = x, y, buttons, d-pad
+  sensor.create_mode("GAMEPAD", true, DATA16, 6, 5, 0, 0.0f, 512.0f, 0.0f, 1024.0f, 0.0f, 512.0f, "XYBD", ABSOLUTE, ABSOLUTE);  //map in and map out unit = "XYBD" = x, y, buttons, d-pad
 #endif
 
   //sensor.get_mode(2)->setCallback(i2c_callback);  // attach call back function to mode 1
 
-  Wire.begin(5, 4); // sda=pin(5), scl=Pin(4)
+  //Wire.begin(5, 4);  // sda=pin(5), scl=Pin(4)
   strip->begin();
   strip->show();
   // servo's
-  ESP32PWM::allocateTimer(0);
-  ESP32PWM::allocateTimer(1);
-  ESP32PWM::allocateTimer(2);
-  ESP32PWM::allocateTimer(3);
-  servo1.setPeriodHertz(50);      // Standard 50hz servo
-  servo2.setPeriodHertz(50);      // Standard 50hz servo
-  servo3.setPeriodHertz(50);      // Standard 50hz servo
-  servo4.setPeriodHertz(50);      // Standard 50hz servo
-  servo1.attach(servo1Pin, minUs, maxUs);
-  servo2.attach(servo2Pin, minUs, maxUs);
-  servo3.attach(servo3Pin, minUs, maxUs);
-  servo4.attach(servo4Pin, minUs, maxUs);
+  //ESP32PWM::allocateTimer(0);
+  //ESP32PWM::allocateTimer(1);
+  //ESP32PWM::allocateTimer(2);
+  //ESP32PWM::allocateTimer(3);
+  //servo1.setPeriodHertz(50);  // Standard 50hz servo
+  //servo2.setPeriodHertz(50);  // Standard 50hz servo
+  //servo3.setPeriodHertz(50);  // Standard 50hz servo
+  //servo4.setPeriodHertz(50);  // Standard 50hz servo
+  //servo1.attach(servo1Pin, minUs, maxUs);
+  //servo2.attach(servo2Pin, minUs, maxUs);
+  //servo3.attach(servo3Pin, minUs, maxUs);
+  //servo4.attach(servo4Pin, minUs, maxUs);
 #ifdef pybricks
   Serial.println("Bluepad32 LPF2 for PyBricks");
-#else 
+#else
   Serial.println("Bluepad32 LPF2 for legacy SPIKE");
 #endif
   Serial.printf("Firmware: %s\r\n", BP32.firmwareVersion());
-  const uint8_t *addr = BP32.localBdAddress();
+  const uint8_t* addr = BP32.localBdAddress();
   Serial.printf("BD Addr: %2X:%2X:%2X:%2X:%2X:%2X\r\n", addr[0], addr[1], addr[2],
                 addr[3], addr[4], addr[5]);
 
@@ -339,8 +338,6 @@ sensor.get_mode(0)->setCallback(neopixel_callback);  // attach call back functio
 
   sensor.reset();
   delay(200);
-
-
 }
 
 int refresh_BP32 = 0;
@@ -348,7 +345,7 @@ int refresh_BP32 = 0;
 
 
 unsigned long last_reading = 0;
-int last_mode=0;
+int last_mode = 0;
 void loop() {
   // This call fetches all the gamepad info from the NINA (ESP32) module.
   // Just call this function in your main loop.
@@ -361,53 +358,47 @@ void loop() {
   }
   sensor.heart_beat();
   int mode = sensor.get_current_mode();
-  if ((millis() - last_reading > 20) || mode!=last_mode) {
+  if ((millis() - last_reading > 20) || mode != last_mode) {
     last_mode = mode;
-    if (mode!=last_mode) last_mode=mode;
+    if (mode != last_mode) last_mode = mode;
     // for any mode gamepad fields are populated
     // if (mode == 0) {
 
-      byte bb[16];
-      memset(bb, 0, 16);
-      //for (int i = 0; i < BP32_MAX_GAMEPADS; i++) {
-      GamepadPtr myGamepad = myGamepads[0];
+    byte bb[16];
+    memset(bb, 0, 16);
+    //for (int i = 0; i < BP32_MAX_GAMEPADS; i++) {
+    GamepadPtr myGamepad = myGamepads[0];
 
- //for (int i = 0; i < BP32_MAX_GAMEPADS; i++) {
-
- 
-        if (myGamepad && myGamepad->isConnected()) {
-          //myGamepad->buttons(),myGamepad->dpad(),
-          bb[0]=(myGamepad->axisX())&0xff;
-          bb[1]=(myGamepad->axisX())>>8;
-          bb[2]=(myGamepad->axisY())&0xff;
-          bb[3]=(myGamepad->axisY())>>8;
-          bb[4]=(myGamepad->axisRX())&0xff;
-          bb[5]=(myGamepad->axisRX())>>8;
-          bb[6]=(myGamepad->axisRY())&0xff;
-          bb[7]=(myGamepad->axisRY())>>8;
-          bb[8]=(myGamepad->buttons())&0xff;
-          bb[9]=(myGamepad->buttons())>>8;
-          bb[10]=(myGamepad->dpad())&0xff;
-          bb[11]=(myGamepad->dpad())>>8;
-          bb[12]=0;
-          bb[13]=0;
-          bb[14]=0;
-          bb[15]=0;
-          
-          //Serial.printf("gp:%d %d \n", bb[4],bb[5]);
-
-/*
- * 
- * 
- */
-
-          
-        }
-        sensor.send_data8(bb,16);
-        
-      
+    //for (int i = 0; i < BP32_MAX_GAMEPADS; i++) {
 
 
+    if (myGamepad && myGamepad->isConnected()) {
+      //myGamepad->buttons(),myGamepad->dpad(),
+      bb[0] = (myGamepad->axisX()) & 0xff;
+      bb[1] = (myGamepad->axisX()) >> 8;
+      bb[2] = (myGamepad->axisY()) & 0xff;
+      bb[3] = (myGamepad->axisY()) >> 8;
+      bb[4] = (myGamepad->axisRX()) & 0xff;
+      bb[5] = (myGamepad->axisRX()) >> 8;
+      bb[6] = (myGamepad->axisRY()) & 0xff;
+      bb[7] = (myGamepad->axisRY()) >> 8;
+      bb[8] = (myGamepad->buttons()) & 0xff;
+      bb[9] = (myGamepad->buttons()) >> 8;
+      bb[10] = (myGamepad->dpad()) & 0xff;
+      bb[11] = (myGamepad->dpad()) >> 8;
+      bb[12] = 0;
+      bb[13] = 0;
+      bb[14] = 0;
+      bb[15] = 0;
+
+      //Serial.printf("gp:%d %d \n", bb[4],bb[5]);
+
+    }
+    // for (int i=0; i<16; i++ ) {
+    //   Serial.printf("%d ", bb[i]);
+    // }
+    // Serial.println();
+    sensor.send_data8(bb, 16);
     last_reading = millis();
   }
   vTaskDelay(1);
