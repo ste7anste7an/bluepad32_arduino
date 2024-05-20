@@ -5,9 +5,9 @@ import struct
 light_sensor_modes = [
     {
         "symbol": "IDX",
-        "format": {"datasets": 1, "type": 0, "figures": 2, "decimals": 0},
+        "format": {"datasets": 8, "type": 1, "figures": 2, "decimals": 0},
         "capability": b"@\x00\x00\x00\x04\x84",
-        "map_out": 0,
+        "map_out": 16,
         "name": "COLOR",
         "pct": (0.0, 100.0),
         "map_in": 228,
@@ -16,7 +16,7 @@ light_sensor_modes = [
     },
     {
         "symbol": "PCT",
-        "format": {"datasets": 1, "type": 0, "figures": 3, "decimals": 0},
+        "format": {"datasets": 8, "type": 1, "figures": 3, "decimals": 0},
         "capability": b"@\x00\x00\x00\x04\x84",
         "map_out": 0,
         "name": "REFLT",
@@ -165,12 +165,36 @@ single_mode_ds = [
     )
 ]
 
+def clamp(value, min_value, max_value):
+    return max(min_value, min(max_value, value))
 
+def saturate(value):
+    return clamp(value, 0.0, 1.0)
+
+def hue_to_rgb(h):
+    r = abs(h * 6.0 - 3.0) - 1.0
+    g = 2.0 - abs(h * 6.0 - 2.0)
+    b = 2.0 - abs(h * 6.0 - 4.0)
+    return saturate(r), saturate(g), saturate(b)
+
+def hsl_to_rgb(h, s, l):
+    # Takes hue in range 0-359, 
+    # Saturation and lightness in range 0-99
+    h /= 359
+    s /= 100
+    l /= 100
+    r, g, b = hue_to_rgb(h)
+    c = (1.0 - abs(2.0 * l - 1.0)) * s
+    r = (r - 0.5) * c + l
+    g = (g - 0.5) * c + l
+    b = (b - 0.5) * c + l
+    rgb = tuple([round(x*255) for x in (r,g,b)])
+    return rgb
 
 sensor_emu = LPF2(mode_convert(light_sensor_modes), 61, debug=False)# ,rx=8,tx=7) # Connects but no hearbeat.
-sensor_emu.current_mode=5
+sensor_emu.current_mode=0
 
-d = 0
+d=0
 c=0
 old_mode=0
 while 1:
@@ -178,22 +202,32 @@ while 1:
     if sensor_emu.current_mode!=old_mode:
         old_mode=sensor_emu.current_mode
         print("mode changed to ",old_mode)
-    if c>50:
+    if c>10:
         c=0
         d += 1
+        print(d)        
         d%=1024
-    if sensor_emu.current_mode==0: # idx
-        sensor_emu.send_payload(struct.pack("B", d%10))
-    elif sensor_emu.current_mode==1: # reflx
-        sensor_emu.send_payload(struct.pack("B", 10+d%10))
-    elif sensor_emu.current_mode==2: # ambi
-        sensor_emu.send_payload(struct.pack("B", 20+d%10))
+    if sensor_emu.current_mode in [0,1,2]: # idx
+        #if sensor_emu.special_color_mode==0:
+            # change mode sizes
+            sensor_emu.modes[sensor_emu.current_mode][8]=16
+            sensor_emu.modes[sensor_emu.current_mode][9]=4
+            sensor_emu.send_payload(struct.pack("8H", d*257,1024-d,*[(d+i)*257 for i in range(4)],0,0))
+        #else:
+        #    sensor_emu.send_payload(struct.pack("B", d%10))
+    #elif sensor_emu.current_mode==1: # reflx
+    #    sensor_emu.send_payload(struct.pack("B", 10+d%10))
+    #elif sensor_emu.current_mode==2: # ambi
+    #    sensor_emu.send_payload(struct.pack("B", 20+d%10))
     elif sensor_emu.current_mode==3: # light
-        sensor_emu.send_payload(struct.pack("3B", 30+d%10,31+d%10,32+d%10))
+        #sensor_emu.send_payload(struct.pack("3B", 30+d%10,31+d%10,32+d%10))
+        # no value from sensor to hub
+        pass
     elif sensor_emu.current_mode==4: #     RREFL
         sensor_emu.send_payload(struct.pack("2H", d+100,d+101))
     elif sensor_emu.current_mode==5:
-        sensor_emu.send_payload(struct.pack("4H", d,d+256,d+384,d+512))
+        #r,g,b= hsl_to_rgb(d,d+10,d+20)
+        sensor_emu.send_payload(struct.pack("4H", d*257,(d+10)*257,(d+20)*257,(d+30)*257))
     elif sensor_emu.current_mode==7:
         sensor_emu.send_payload(struct.pack("4H", d+1,d+2,d+3,d+4))
         
@@ -201,4 +235,4 @@ while 1:
     #print(d)
     if data_in:
         print(f"\nReceived: {data_in[0]} on mode {data_in[1]}")
-    sleep_ms(50)
+    sleep_ms(20)
