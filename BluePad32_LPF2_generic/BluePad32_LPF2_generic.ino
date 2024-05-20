@@ -539,16 +539,16 @@ void config_sensor() {
     delete lpf2_sensor;
     lpf2_sensor = new EV3UARTEmulation(RXD2, TXD2, COLOR_SENSOR, 115200);
     sensor_conf.sensor_id = COLOR_SENSOR;
-    lpf2_sensor->create_mode("POW", true, DATA16, 8, 4, 0, -100.0f, 100.0f, -100.0f, 100.0f, -100.0f, 100.0f, "PCT", ABSOLUTE, ABSOLUTE);  //map in and map out unit = "XYBD" = x, y, buttons, d-pad
-    lpf2_sensor->create_mode("SPE", true, DATA8, 16, 5, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "RAW", ABSOLUTE, ABSOLUTE);           //map in and map out unit = "XYBD" = x, y, buttons, d-pad
-    lpf2_sensor->create_mode("POS", true, DATA8, 16, 5, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "XYBD", ABSOLUTE, ABSOLUTE);          //map in and map out unit = "XYBD" = x, y, buttons, d-pad
-
-    //lpf2_sensor->create_mode("SPE", true, DATA32, 1, 4, 0, -100.0f, 100.0f, -100.0f, 100.0f, -100.0f, 100.0f, "PCT", ABSOLUTE, ABSOLUTE);   //map in and map out unit = "XYBD" = x, y, buttons, d-pad
-    //lpf2_sensor->create_mode("POS", true, DATA32, 1, 4, 0, -360.0f, 360.0f, -100.0f, 100.0f, -360.0f, 360.0f, "PCT", ABSOLUTE, ABSOLUTE);   //map in and map out unit = "XYBD" = x, y, buttons, d-pad
-
-    lpf2_sensor->create_mode("APOS", true, DATA32, 1, 4, 0, -180.0f, 179.0f, -100.0f, 100.0f, -180.0f, 179.0f, "PCT", ABSOLUTE, ABSOLUTE);  //map in and map out unit = "XYBD" = x, y, buttons, d-pad
-    lpf2_sensor->get_mode(1)->setCallback(pybricks_neopixel_callback);                                                                      // attach call back function to mode 0
-    lpf2_sensor->get_mode(2)->setCallback(pybricks_servo_callback);                                                                         // attach call back function to mode 1
+    lpf2_sensor->create_mode("COLOR", true, DATA16, 8, 2, 0, -100.0f, 100.0f, -100.0f, 100.0f, -100.0f, 100.0f, "PCT", ABSOLUTE, ABSOLUTE);  //map in and map out unit = "XYBD" = x, y, buttons, d-pad
+    lpf2_sensor->create_mode("REFLT", true, DATA16, 8, 3, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "RAW", ABSOLUTE, ABSOLUTE);           //map in and map out unit = "XYBD" = x, y, buttons, d-pad
+    lpf2_sensor->create_mode("AMBI", true, DATA8, 1, 3, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "XYBD", ABSOLUTE, ABSOLUTE);          //map in and map out unit = "XYBD" = x, y, buttons, d-pad
+    lpf2_sensor->create_mode("LIGHT", true, DATA8, 3, 3, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "XYBD", ABSOLUTE, ABSOLUTE);          //map in and map out unit = "XYBD" = x, y, buttons, d-pad
+    lpf2_sensor->create_mode("RREFL", true, DATA8, 2, 4, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "XYBD", ABSOLUTE, ABSOLUTE);          //map in and map out unit = "XYBD" = x, y, buttons, d-pad
+    lpf2_sensor->create_mode("RGB I", true, DATA16, 4, 4, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "XYBD", ABSOLUTE, ABSOLUTE);          //map in and map out unit = "XYBD" = x, y, buttons, d-pad
+    lpf2_sensor->create_mode("HSV", true, DATA16, 3, 4, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "XYBD", ABSOLUTE, ABSOLUTE);          //map in and map out unit = "XYBD" = x, y, buttons, d-pad
+    lpf2_sensor->create_mode("SHSV", true, DATA16, 4, 4, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "XYBD", ABSOLUTE, ABSOLUTE);          //map in and map out unit = "XYBD" = x, y, buttons, d-pad
+   lpf2_sensor->get_mode(0)->setCallback(pybricks_neopixel_callback);                                                                      // attach call back function to mode 0
+    lpf2_sensor->get_mode(1)->setCallback(pybricks_servo_callback);                                                                         // attach call back function to mode 1
 
     Serial.printf("LOG: This sensor is configured as Color Sensor\r\n");
   } else {
@@ -558,8 +558,8 @@ void config_sensor() {
 
     //lpf2_sensor->create_mode("LEV O\x00\x80\x00\x00\x00\x05\x04", true, DATA8, 8, 1, 0, -9.0f, 9.0f, -100.0f, 100.0f, -9.0f, 9.0f, "PCT", 0, 0x50);  //map in and map out unit = "XYBD" = x, y, buttons, d-pad
     //lpf2_sensor->create_mode("COL O\x00\x80\x00\x00\x00\x05\x04", true, DATA8, 1, 2, 0, 0.0f, 10.0f, 0.0f, 100.0f, 0.0f, 10.0f, "PCT", 0, 0x44);     //map in and map out unit = "XYBD" = x, y, buttons, d-pad
-    lpf2_sensor->create_mode("LEV O\x00\x80\x00\x00\x00\x05\x04", true, DATA8, 16, 5, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "RAW", ABSOLUTE, ABSOLUTE);  //map in and map out unit = "XYBD" = x, y, buttons, d-pad
-    lpf2_sensor->create_mode("COL O\x00\x80\x00\x00\x00\x05\x04", true, DATA8, 16, 5, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "RAW", ABSOLUTE, ABSOLUTE);  //map in and map out unit = "XYBD" = x, y, buttons, d-pad
+    lpf2_sensor->create_mode("LEV O\x00\x80\x00\x00\x00\x05\x04", true, DATA8, 9, 5, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "RAW", ABSOLUTE, ABSOLUTE);  //map in and map out unit = "XYBD" = x, y, buttons, d-pad
+    lpf2_sensor->create_mode("COL O\x00\x80\x00\x00\x00\x05\x04", true, DATA8, 1, 5, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "RAW", ABSOLUTE, ABSOLUTE);  //map in and map out unit = "XYBD" = x, y, buttons, d-pad
     lpf2_sensor->create_mode("PIX O\x00\x80\x00\x00\x00\x05\x04", true, DATA8, 9, 3, 0, 0.0f, 170.0f, 0.0f, 100.0f, 0.0f, 170.0f, "   ", 0, 0x10);              //map in and map out unit = "XYBD" = x, y, buttons, d-pad
     lpf2_sensor->create_mode("TRANS\x00\x80\x00\x00\x00\x05\x04", true, DATA8, 1, 1, 0, 0.0f, 2.0f, 0.0f, 100.0f, 0.0f, 2.0f, "   ", 0, 0x10);                  //map in and map out unit = "XYBD" = x, y, buttons, d-pad
     lpf2_sensor->get_mode(0)->setCallback(neopixel_callback);                                                                                                   // attach call back function to mode 0
@@ -758,20 +758,7 @@ void loop() {
             bb[4] = a;
             bb[5] = b;
           }       // mde==0
-          else {  //pybricks modi
-            bb[0] = (myGamepad->axisX()) & 0xff;
-            bb[1] = (myGamepad->axisX()) >> 8;
-            bb[2] = (myGamepad->axisY()) & 0xff;
-            bb[3] = (myGamepad->axisY()) >> 8;
-            bb[4] = (myGamepad->axisRX()) & 0xff;
-            bb[5] = (myGamepad->axisRX()) >> 8;
-            bb[6] = (myGamepad->axisRY()) & 0xff;
-            bb[7] = (myGamepad->axisRY()) >> 8;
-            bb[8] = (myGamepad->buttons()) & 0xff;
-            bb[9] = (myGamepad->buttons()) >> 8;
-            bb[10] = (myGamepad->dpad()) & 0xff;
-            bb[11] = (myGamepad->dpad()) >> 8;
-          }
+
         }
         int nr_bytes = lpf2_sensor->get_mode(mode)->sample_size;
         //sensor.send_data8(bb, nr_bytes);
@@ -782,7 +769,7 @@ void loop() {
         GamepadPtr myGamepad = myGamepads[0];
 
         if (myGamepad && myGamepad->isConnected()) {
-          if (last_mode == 0) {  // spike3
+          if ((last_mode == 0) || (last_mode==1)) {  // spike3
             short bb[16];
             byte a, b;
             memset(bb, 0, 16);
@@ -808,26 +795,7 @@ void loop() {
             int nr_bytes = lpf2_sensor->get_mode(mode)->sample_size;
             //sensor.send_data8(bb, nr_bytes);
             lpf2_sensor->send_data16((short *)bb, nr_bytes);
-          } else {  //pybricks modi
-            byte bb[16];
-            int8_t a, b;
-            memset(bb, 0, 16);
-            bb[0] = (myGamepad->axisX()) & 0xff;
-            bb[1] = (myGamepad->axisX()) >> 8;
-            bb[2] = (myGamepad->axisY()) & 0xff;
-            bb[3] = (myGamepad->axisY()) >> 8;
-            bb[4] = (myGamepad->axisRX()) & 0xff;
-            bb[5] = (myGamepad->axisRX()) >> 8;
-            bb[6] = (myGamepad->axisRY()) & 0xff;
-            bb[7] = (myGamepad->axisRY()) >> 8;
-            bb[8] = (myGamepad->buttons()) & 0xff;
-            bb[9] = (myGamepad->buttons()) >> 8;
-            bb[10] = (myGamepad->dpad()) & 0xff;
-            bb[11] = (myGamepad->dpad()) >> 8;
-            int nr_bytes = lpf2_sensor->get_mode(mode)->sample_size;
-            //sensor.send_data8(bb, nr_bytes);
-            lpf2_sensor->send_data8(bb, nr_bytes);
-          }
+          } 
         }
       }
 
