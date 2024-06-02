@@ -41,8 +41,8 @@
 // v1.12.0 can be installed via library manager
 
 GamepadPtr myGamepads[BP32_MAX_GAMEPADS];
-#define RXD2 18 // 8 for v2
-#define TXD2 19 // 7 for v2
+#define RXD2 18  // 8 for v2
+#define TXD2 19  // 7 for v2
 #define COLOR_MATRIX 0x40
 #define COLOR_SENSOR 0x3D
 #define DEFAULT_SENSOR COLOR_SENSOR
@@ -552,7 +552,7 @@ void setup() {
   BP32.forgetBluetoothKeys();
 
 
-  
+
   Serial.println("LOG: BluePad32 for SPIKEv3, see https://github.com/antonvh/PUPRemote/blob/main/examples/bluepad/spike3/README.md");
   Serial.printf("LOG: Firmware: %s\r\n", BP32.firmwareVersion());
   const uint8_t *addr = BP32.localBdAddress();
