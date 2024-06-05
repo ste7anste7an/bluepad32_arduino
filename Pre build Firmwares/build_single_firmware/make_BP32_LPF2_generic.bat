@@ -1,0 +1,1 @@
+esptool.exe --chip esp32 merge_bin  --flash_mode dio --flash_freq 80m --flash_size 4MB  0x1000 BluePad32_LPF2_generic.ino.bootloader.bin 0x8000 BluePad32_LPF2_generic.ino.partitions.bin 0xe000 boot_app0.bin 0x10000 BluePad32_LPF2_generic.ino.bin -o ../firmware_BP32_LPF2_generic.bin

@@ -42,8 +42,8 @@
 #include <ESP32Servo.h>
 
 GamepadPtr myGamepads[BP32_MAX_GAMEPADS];
-#define RXD2 18
-#define TXD2 19
+byte RXD2=18;
+byte TXD2=19;
 #define COLOR_MATRIX 0x40
 #define COLOR_SENSOR 0x3D
 #define DEFAULT_SENSOR COLOR_SENSOR
@@ -94,6 +94,8 @@ char strMAGIC[] = "LMSESP";
 
 byte response = 1;  // no response of commands except OK or ERROR
 
+
+byte is_lms_esp32_version2 = 0; // filled by calling ESP.getChipModel()
 /*
 
   div_palette = [
@@ -557,7 +559,7 @@ void config_sensor() {
     lpf2_sensor = new EV3UARTEmulation(RXD2, TXD2, COLOR_MATRIX, 115200);
 
     lpf2_sensor->create_mode("LEV O\x00\x80\x00\x00\x00\x05\x04", true, DATA8, 9, 5, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "RAW", ABSOLUTE, ABSOLUTE);  //map in and map out unit = "XYBD" = x, y, buttons, d-pad
-    lpf2_sensor->create_mode("COL O\x00\x80\x00\x00\x00\x05\x04", true, DATA8, 1, 5, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "RAW", ABSOLUTE, ABSOLUTE);  //map in and map out unit = "XYBD" = x, y, buttons, d-pad
+    lpf2_sensor->create_mode("COL O\x00\x80\x00\x00\x00\x05\x04", true, DATA8, 9, 5, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "RAW", ABSOLUTE, ABSOLUTE);  //map in and map out unit = "XYBD" = x, y, buttons, d-pad
     lpf2_sensor->create_mode("PIX O\x00\x80\x00\x00\x00\x05\x04", true, DATA8, 9, 3, 0, 0.0f, 170.0f, 0.0f, 100.0f, 0.0f, 170.0f, "   ", 0, 0x10);             //map in and map out unit = "XYBD" = x, y, buttons, d-pad
     lpf2_sensor->create_mode("TRANS\x00\x80\x00\x00\x00\x05\x04", true, DATA8, 1, 1, 0, 0.0f, 2.0f, 0.0f, 100.0f, 0.0f, 2.0f, "   ", 0, 0x10);                 //map in and map out unit = "XYBD" = x, y, buttons, d-pad
     lpf2_sensor->get_mode(0)->setCallback(pybricks_neopixel_callback);                                                                                         // attach call back function to mode 0
@@ -590,7 +592,19 @@ byte connected = 0;
 // Arduino setup function. Runs in CPU 1
 void setup() {
   // default mapping:
-
+  if (strcmp(ESP.getChipModel(),"ESP32-PICO-V3-02")==0) {
+    is_lms_esp32_version2=1;
+    RXD2 = 8;
+    TXD2 = 7;
+    servo1Pin = 19;
+    servo2Pin = 20;
+    servo3Pin = 21;
+    servo4Pin = 22;
+  } else {
+    is_lms_esp32_version2=0;
+    RXD2 = 18;
+    TXD2 = 19;
+  }
 
   Serial.begin(115200);
   Serial.setRxBufferSize(1000);
@@ -720,7 +734,7 @@ void loop() {
         GamepadPtr myGamepad = myGamepads[0];
         //Serial.print("#");
         if (myGamepad && myGamepad->isConnected()) {
-          if (last_mode == 0) {  // spke3
+          if ((last_mode == 0) or (last_mode == 2)) {  // spke3
 
             a = (clip((myGamepad->axisX() + 512), 0, 1023) >> 2);
             b = (clip((myGamepad->axisY() + 512), 0, 1023) >> 2);
