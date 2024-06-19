@@ -26,7 +26,8 @@
 //#include <ESPmDNS.h>
 //#include <WebConfig.h>
 
-
+#include "soc/soc.h"
+#include "soc/rtc_cntl_reg.h"
 
 #include <Bluepad32.h>
 // see https://github.com/ricardoquesada/bluepad32/blob/main/docs/plat_arduino.md
@@ -42,8 +43,8 @@
 #include <ESP32Servo.h>
 
 GamepadPtr myGamepads[BP32_MAX_GAMEPADS];
-byte RXD2=18;
-byte TXD2=19;
+byte RXD2 = 18;
+byte TXD2 = 19;
 #define COLOR_MATRIX 0x40
 #define COLOR_SENSOR 0x3D
 #define DEFAULT_SENSOR COLOR_SENSOR
@@ -54,6 +55,10 @@ byte TXD2=19;
 #define LED_COUNT 16
 
 Adafruit_NeoPixel *strip = new Adafruit_NeoPixel(LED_COUNT, LED_PIN);  //, NEO_GRB + NEO_KHZ800);
+
+Adafruit_NeoPixel *neopixel_debug = new Adafruit_NeoPixel(1, 25);  //, neopixel lms_esp32_v2
+Adafruit_NeoPixel *neopixel_strip = new Adafruit_NeoPixel(LED_COUNT, LED_PIN);  //nr_leds, pin
+
 
 Servo servo1;
 Servo servo2;
@@ -95,7 +100,7 @@ char strMAGIC[] = "LMSESP";
 byte response = 1;  // no response of commands except OK or ERROR
 
 
-byte is_lms_esp32_version2 = 0; // filled by calling ESP.getChipModel()
+byte is_lms_esp32_version2 = 0;  // filled by calling ESP.getChipModel()
 /*
 
   div_palette = [
@@ -148,8 +153,6 @@ struct Sensor {
 // use pointer allows to dynamically change nrumber of leds or pin
 // change strip.begin() to strip->begin(), etc.
 // delete object before initiating a new one
-
-Adafruit_NeoPixel *neopixel_strip = new Adafruit_NeoPixel(LED_COUNT, LED_PIN);  //, NEO_GRB + NEO_KHZ800);
 
 
 #define FILL 0x10
@@ -541,16 +544,16 @@ void config_sensor() {
     delete lpf2_sensor;
     lpf2_sensor = new EV3UARTEmulation(RXD2, TXD2, COLOR_SENSOR, 115200);
     sensor_conf.sensor_id = COLOR_SENSOR;
-    lpf2_sensor->create_mode("COLOR", true, DATA16, 8, 2, 0, -100.0f, 100.0f, -100.0f, 100.0f, -100.0f, 100.0f, "PCT", ABSOLUTE, ABSOLUTE);  //map in and map out unit = "XYBD" = x, y, buttons, d-pad
-    lpf2_sensor->create_mode("REFLT", true, DATA16, 8, 3, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "RAW", ABSOLUTE, ABSOLUTE);           //map in and map out unit = "XYBD" = x, y, buttons, d-pad
-    lpf2_sensor->create_mode("AMBI", true, DATA8, 1, 3, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "XYBD", ABSOLUTE, ABSOLUTE);            //map in and map out unit = "XYBD" = x, y, buttons, d-pad
-    lpf2_sensor->create_mode("LIGHT", true, DATA8, 3, 3, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "XYBD", ABSOLUTE, ABSOLUTE);           //map in and map out unit = "XYBD" = x, y, buttons, d-pad
-    lpf2_sensor->create_mode("RREFL", true, DATA8, 2, 4, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "XYBD", ABSOLUTE, ABSOLUTE);           //map in and map out unit = "XYBD" = x, y, buttons, d-pad
-    lpf2_sensor->create_mode("RGB I", true, DATA16, 4, 4, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "XYBD", ABSOLUTE, ABSOLUTE);          //map in and map out unit = "XYBD" = x, y, buttons, d-pad
-    lpf2_sensor->create_mode("HSV", true, DATA16, 3, 4, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "XYBD", ABSOLUTE, ABSOLUTE);            //map in and map out unit = "XYBD" = x, y, buttons, d-pad
-    lpf2_sensor->create_mode("SHSV", true, DATA16, 4, 4, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "XYBD", ABSOLUTE, ABSOLUTE);           //map in and map out unit = "XYBD" = x, y, buttons, d-pad
-    lpf2_sensor->get_mode(0)->setCallback(pybricks_neopixel_callback);                                                                       // attach call back function to mode 0
-    lpf2_sensor->get_mode(1)->setCallback(pybricks_servo_callback);                                                                          // attach call back function to mode 1
+    lpf2_sensor->create_mode("COLOR\x00\x80\x00\x00\x00\x05\x04", true, DATA16, 8, 2, 0, -100.0f, 100.0f, -100.0f, 100.0f, -100.0f, 100.0f, "PCT", ABSOLUTE, ABSOLUTE);  //map in and map out unit = "XYBD" = x, y, buttons, d-pad
+    lpf2_sensor->create_mode("REFLT\x00\x80\x00\x00\x00\x05\x04", true, DATA16, 8, 3, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "RAW", ABSOLUTE, ABSOLUTE);           //map in and map out unit = "XYBD" = x, y, buttons, d-pad
+    lpf2_sensor->create_mode("AMBI\x00\x80\x00\x00\x00\x05\x04", true, DATA8, 1, 3, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "XYBD", ABSOLUTE, ABSOLUTE);            //map in and map out unit = "XYBD" = x, y, buttons, d-pad
+    lpf2_sensor->create_mode("LIGHT\x00\x80\x00\x00\x00\x05\x04", true, DATA8, 3, 3, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "XYBD", ABSOLUTE, ABSOLUTE);           //map in and map out unit = "XYBD" = x, y, buttons, d-pad
+    lpf2_sensor->create_mode("RREFL\x00\x80\x00\x00\x00\x05\x04", true, DATA8, 2, 4, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "XYBD", ABSOLUTE, ABSOLUTE);           //map in and map out unit = "XYBD" = x, y, buttons, d-pad
+    lpf2_sensor->create_mode("RGB I\x00\x80\x00\x00\x00\x05\x04", true, DATA16, 4, 4, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "XYBD", ABSOLUTE, ABSOLUTE);          //map in and map out unit = "XYBD" = x, y, buttons, d-pad
+    lpf2_sensor->create_mode("HSV\x00\x80\x00\x00\x00\x05\x04", true, DATA16, 3, 4, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "XYBD", ABSOLUTE, ABSOLUTE);            //map in and map out unit = "XYBD" = x, y, buttons, d-pad
+    lpf2_sensor->create_mode("SHSV\x00\x80\x00\x00\x00\x05\x04", true, DATA16, 4, 4, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "XYBD", ABSOLUTE, ABSOLUTE);           //map in and map out unit = "XYBD" = x, y, buttons, d-pad
+    lpf2_sensor->get_mode(0)->setCallback(pybricks_neopixel_callback);                                                                                                   // attach call back function to mode 0
+    lpf2_sensor->get_mode(1)->setCallback(pybricks_servo_callback);                                                                                                      // attach call back function to mode 1
 
     Serial.printf("LOG: This sensor is configured as Color Sensor\r\n");
   } else {
@@ -564,7 +567,7 @@ void config_sensor() {
     lpf2_sensor->create_mode("TRANS\x00\x80\x00\x00\x00\x05\x04", true, DATA8, 1, 1, 0, 0.0f, 2.0f, 0.0f, 100.0f, 0.0f, 2.0f, "   ", 0, 0x10);                 //map in and map out unit = "XYBD" = x, y, buttons, d-pad
     lpf2_sensor->get_mode(0)->setCallback(pybricks_neopixel_callback);                                                                                         // attach call back function to mode 0
     lpf2_sensor->get_mode(1)->setCallback(pybricks_servo_callback);                                                                                            // attach call back function to mode 1
-    lpf2_sensor->get_mode(2)->setCallback(neopixel_callback);  // attach call back function to mode 0
+    lpf2_sensor->get_mode(2)->setCallback(neopixel_callback);                                                                                                  // attach call back function to mode 0
 
     Serial.printf("LOG: This sensor is configured as Color Matrix\r\n");
     Serial.printf("LOG: NeoPixel on GPIO %d\r\n", sensor_conf.neopixel_gpio);
@@ -591,17 +594,22 @@ void config_sensor() {
 byte connected = 0;
 // Arduino setup function. Runs in CPU 1
 void setup() {
+  // disable brownout
+  WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0);
+
   // default mapping:
-  if (strcmp(ESP.getChipModel(),"ESP32-PICO-V3-02")==0) {
-    is_lms_esp32_version2=1;
+  if (strcmp(ESP.getChipModel(), "ESP32-PICO-V3-02") == 0) {
+    is_lms_esp32_version2 = 1;
     RXD2 = 8;
     TXD2 = 7;
     servo1Pin = 19;
     servo2Pin = 20;
     servo3Pin = 21;
     servo4Pin = 22;
+    neopixel_debug->setPixelColor(0, 10, 0, 0);
+    neopixel_debug->show();
   } else {
-    is_lms_esp32_version2=0;
+    is_lms_esp32_version2 = 0;
     RXD2 = 18;
     TXD2 = 19;
   }
@@ -656,6 +664,20 @@ void setup() {
   // sensor.get_mode(1)->setCallback(servo_callback);  // attach call back function to mode 1
   // //sensor.get_mode(2)->setCallback(i2c_callback);  // attach call back function to mode 1
 
+
+  connected = lpf2_sensor->reset();
+  if (connected == 1) {
+    if (is_lms_esp32_version2 == 1) {
+      // green led
+      neopixel_debug->setPixelColor(0, 0, 10, 0);
+      neopixel_debug->show();
+    }
+    Serial.printf("LOG: LMS-ESP32 is connected to the SPIKE3 hub.\r\n");
+  } else {
+    Serial.printf("ERROR: Failure connecting LMS-ESP32 to the SPIKE3 hub. Press RESET button on LMS-ESp32.\r\n");
+  }
+  Serial.println("Go to https://bluepad.antonsmindstorms.com to configure the LMS-ESp32.\r\n");
+  delay(200);
   // Setup the Bluepad32 callbacks
   BP32.setup(&onConnectedGamepad, &onDisconnectedGamepad);
 
@@ -673,16 +695,6 @@ void setup() {
   const uint8_t *addr = BP32.localBdAddress();
   Serial.printf("LOG: BD Addr: %2X:%2X:%2X:%2X:%2X:%2X\r\n", addr[0], addr[1], addr[2],
                 addr[3], addr[4], addr[5]);
-
-
-  connected = lpf2_sensor->reset();
-  if (connected == 1) {
-    Serial.printf("LOG: LMS-ESP32 is connected to the SPIKE3 hub.\r\n");
-  } else {
-    Serial.printf("ERROR: Failure connecting LMS-ESP32 to the SPIKE3 hub. Press RESET button on LMS-ESp32.\r\n");
-  }
-  Serial.println("Go to https://bluepad.antonsmindstorms.com to configure the LMS-ESp32.\r\n");
-  delay(200);
 }
 
 int clip(int n, int lower, int upper) {
@@ -715,6 +727,7 @@ void loop() {
   // The gamepads pointer (the ones received in the callbacks) gets updated
   // automatically.
   if (connected == 1) {
+
     lpf2_sensor->heart_beat();
     int mode = lpf2_sensor->get_current_mode();
     if (mode != last_mode) {
@@ -734,6 +747,11 @@ void loop() {
         GamepadPtr myGamepad = myGamepads[0];
         //Serial.print("#");
         if (myGamepad && myGamepad->isConnected()) {
+          if (is_lms_esp32_version2 == 1) {
+            // blue led
+            neopixel_debug->setPixelColor(0, 0, 0, 10);
+            neopixel_debug->show();
+          }
           if ((last_mode == 0) or (last_mode == 2)) {  // spke3
 
             a = (clip((myGamepad->axisX() + 512), 0, 1023) >> 2);
@@ -783,7 +801,11 @@ void loop() {
           byte a, b;
           memset(bb, 0, 16);
           if (myGamepad && myGamepad->isConnected()) {
-
+            if (is_lms_esp32_version2 == 1) {
+              // blue led
+              neopixel_debug->setPixelColor(0, 0, 0, 10);
+              neopixel_debug->show();
+            }
             a = clip((myGamepad->axisX() + 512), 0, 1023) >> 2;
             b = clip((myGamepad->axisY() + 512), 0, 1023) >> 2;
             bb[0] = a + b * 256;
