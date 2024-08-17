@@ -112,7 +112,7 @@
         <p class="col-md-8">
           Ensure your LMS-ESP32 board is flashed with
           <a href="https://firmware.antonsmindstorms.com"
-            >BluePad32 for Spike3</a
+            >BluePad32 for Spike3 and Pybricks (version 20240817)</a
           >, then connect it to your computer via USB.
         </p>
 
@@ -423,6 +423,48 @@
             </div>
           </div>
         </div>
+        <h2>Filter GamePad</h2>
+        <p class="col-md-8">
+          Pair with any gamepad, or with a gamepad with a speicific MAC address.
+          
+        </p>
+        <div class="mb-5">
+          <button id="butGetBTMac" class="btn btn-primary px-4 mt-1">
+            Get BT MAC 
+          </button>
+          <button id="butSetBTAllow" class="btn btn-outline-primary px-4 mt-1">
+            Set current MAC as allowed
+          </button>
+            <input type="checkbox" id="bt_filter" name="BT Filter" checked />
+            <label for="bt_filter">BT Filtered</label>
+        
+        </div>
+        <div class="row g-3 align-items-center mb-2">
+          <div class="col-auto">
+            <label class="col-form-label">Current BT MAC address</label>
+            <input
+              type="string"
+              id="bt_mac"
+              name="bt_mac"
+              
+            />
+          </div>
+          
+        </div>
+        <div class="row g-3 align-items-center mb-2">
+          <div class="col-auto">
+            <label class="col-form-label">Filtered BT MAC address</label>
+            <input
+              type="string"
+              id="bt_allow"
+              name="bt_allow"
+              
+            />
+          </div>
+          
+        </div>
+
+
         <h2>Send configuration</h2>
         <p class="col-md-8">
           Tweak your configuration live, while connected to the hub, by using

@@ -30,6 +30,8 @@ const butGetConfig = document.getElementById("butGetConfig");
 const butDefault = document.getElementById("butDefault");
 const butClearLog = document.getElementById("butClearLog");
 const butSendConfig = document.getElementById("butSendConfig");
+const butGetBTMac = document.getElementById("butGetBTMac");
+const butSetBTAllow = document.getElementById("butSetBTAllow");
 const butSaveConfig = document.getElementById("butSaveConfig");
 toggleUIConnected(false);
 const radioColor = document.getElementById("color_sensor");
@@ -38,6 +40,9 @@ const matrixSetup = document.getElementById("matrix-setup");
 
 const field_neopixel_nrleds = document.getElementById("neopixel_nrleds");
 const field_neopixel_gpio = document.getElementById("neopixel_gpio");
+const field_bt_allow = document.getElementById("bt_allow");
+const checkboxBTFilter = document.getElementById("bt_filter");
+const field_bt_mac = document.getElementById("bt_mac");
 // create array with fields 'color0, color1,' etc.
 var color_fields = [];
 for (var i = 0; i < 11; i++) {
@@ -62,6 +67,10 @@ document.addEventListener("DOMContentLoaded", () => {
     butGetConfig.addEventListener("click", clickGetConfig);
     butDefault.addEventListener("click", clickDefault);
     butClearLog.addEventListener("click", clickClearLog);
+    butGetBTMac.addEventListener("click", clickBTMac);
+    butSetBTAllow.addEventListener("click", clickBTAllow);
+    butClearLog.addEventListener("click", clickClearLog);
+    
     butSendConfig.addEventListener("click", clickSendConfig);
     butSaveConfig.addEventListener("click", clickSaveConfig);
     radioColor.addEventListener("click", function(){matrixSetup.classList.remove("show");});
@@ -79,7 +88,7 @@ field_neopixel_nrleds.value = gridHeight;
 field_neopixel_nrleds.addEventListener("change", (event) => {
     gridHeight=field_neopixel_nrleds.value ;
     if (gridHeight>64) {gridHeight=64; field_neopixel_nrleds.value = gridHeight;}
-    console.log(`changed: ${gridHeight}`);
+    // console.log(`changed: ${gridHeight}`);
     updateGrid();
     SetMapping();
     updateSelectedCells();
@@ -196,7 +205,7 @@ function selectCell(row, col) {
 }
 
 function SetMapping() {
-    console.log(`set mapping ${gridHeight}`);
+    // console.log(`set mapping ${gridHeight}`);
     for (let i=0; i<9; i++) {
     let bytes=controller_bytes[i];
     for (let b=0; b<8; b++) {
@@ -226,7 +235,7 @@ async function connect() {
     };
     // - Request a port and open a connection.
     port = await navigator.serial.requestPort({ filters: [filter] ,bufferSize:10000});
-    console.log(port);
+    // console.log(port);
     // - Wait for the port to open.
     await port.open({ baudRate: 115200, bufferSize: 10000, flowControl:"none" });
 
@@ -307,13 +316,43 @@ function parseconfig(a) {
         colors.push(colnums);
     }
     // console.log(colors);
-
+    var bt_filter = parseInt(lines[25].split(" ").pop());
+    var bt_allow="";
+    var mac_bytes = lines[26].split(" ");
+    mac_bytes.shift();
+    mac_bytes.pop();
+    mac_bytes=getnums(mac_bytes);
+    for (var i=0; i< 6; i++ ) {
+        var s = mac_bytes[i].toString(16)
+        if(s.length < 2) {
+            s = '0' + s;
+        }
+        bt_allow+=s+':'
+    }   
+    bt_allow=bt_allow.slice(0, -1); 
+    var bt_mac="";
+    var mac_bytes = lines[27].split(" ");
+    mac_bytes.shift();
+    mac_bytes.pop();
+    mac_bytes=getnums(mac_bytes);
+    for (var i=0; i< 6; i++ ) {
+        var s = mac_bytes[i].toString(16)
+        if(s.length < 2) {
+            s = '0' + s;
+        }
+        bt_mac+=s+':'
+    }   
+    bt_mac=bt_mac.slice(0, -1); 
+    
     return {
         sensor_id: sensor_id,
         neopixel_nrleds: neopixel_nrleds,
         neopixel_gpio: neopixel_gpio,
         mapping: mapping,
         colors: colors,
+        bt_filter: bt_filter,
+        bt_allow: bt_allow,
+        bt_mac: bt_mac
     };
 } //catch {console.log("error");}
 
@@ -412,6 +451,7 @@ async function clickDefaultMapping() {
 
 async function clickDefault() {
     writeToStream("default");
+    writeToStream("eeprom clear");
     writeToStream("show");
 }
 
@@ -420,7 +460,7 @@ async function clickClearLog() {
 }
 
 async function clickGetConfig() {
-    console.log("clickGetConfig");
+    // console.log("clickGetConfig");
     config = "";
     writeToStream("show", "");
 }
@@ -428,6 +468,16 @@ async function clickGetConfig() {
 async function clickSaveConfig() {
     clickSendConfig();
     writeToStream(`save`);
+}
+
+async function clickBTAllow() {
+    clickSendConfig();
+    writeToStream(`save`);
+}
+
+async function clickBTMac() {
+    config = "";
+    writeToStream("show", "");
 }
 
 
@@ -458,7 +508,7 @@ async function clickSendMapping() {
 async function clickSendConfig() {
     writeToStream("response 0"); // select non responsive interface on LMS-ESP32
     
-    console.log("clickSendConfig");
+    // console.log("clickSendConfig");
     // collect information from webpage
     var sensor_id = 0;
     if (radioColor.checked) {
@@ -486,6 +536,18 @@ async function clickSendConfig() {
         }
 
     }
+    var bt_filter=0;
+    if (checkboxBTFilter.checked) bt_filter=1;
+    writeToStream(`set bt_filter ${bt_filter}`);
+    var mac_address = field_bt_mac.value;
+    field_bt_allow.value=mac_address;
+    var mac_bytes=mac_address.split(':');
+    // console.log("mac_bytes:"+mac_bytes);
+    var mac_arr=[];
+    for (var i=0; i<6; i++ ) {
+        mac_arr.push( parseInt(mac_bytes[i], 16));
+    }
+    writeToStream(`set bt_allow ${mac_arr[0]} ${mac_arr[1]} ${mac_arr[2]} ${mac_arr[3]} ${mac_arr[4]} ${mac_arr[5]}`);
 }
 
 /**
@@ -494,26 +556,32 @@ async function clickSendConfig() {
  */
 async function readLoop() {
     // CODELAB: Add read loop here.
-    // CODELAB: Add read loop here.
     while (true) {
         const { value, done } = await reader.read();
         if (value) {
+            // console.log("value=",value);
             new_config = 0;
-            var start_magic = value.indexOf("magic");
-            if (start_magic >= 0) {
-                found_conf = 1;
-            }
+
             config = config + value;
-            if (found_conf == 1 && value.indexOf("OK") >= 0) {
+            var start_magic = config.substring(0,10).indexOf("magic");
+            if (found_conf==0 && start_magic >= 0) {
+                found_conf = 1;
+                // console.log("magic found");
+                var start_magic = config.indexOf("magic");
+                config = config.slice(start_magic);
+            }
+            if (found_conf == 1 && config.indexOf("OK") > 0) {
+                // console.log("OK found");
                 new_config = 1;
                 found_conf = 0;
             }
             if (new_config == 1) {
+                new_config = 0;
                 var start_magic = config.indexOf("magic");
                 var OK = config.indexOf("OK");
                 config = config.slice(start_magic);
                 parsedconfig = parseconfig(config);
-                console.log(parsedconfig);
+                // console.log(parsedconfig);
                 config = "";
                 if (parsedconfig.sensor_id == 64) {
                     radioMatrix.checked = true;
@@ -555,6 +623,11 @@ async function readLoop() {
                     color_fields[i].value = colcode;
                 }
                 new_config = 0;
+                field_bt_allow.value = parsedconfig.bt_allow;
+                field_bt_mac.value = parsedconfig.bt_mac;
+                
+                checkboxBTFilter.value = parsedconfig.bt_filter;
+
                // console.log(value);
             }
             log.textContent = log.textContent + value;
@@ -581,7 +654,7 @@ function writeToStream(...lines) {
     // CODELAB: Write to output stream
     const writer = outputStream.getWriter();
     lines.forEach((line) => {
-        console.log("[SEND]", line);
+        // console.log("[SEND]", line);
         writer.write(line + "\r");
         //let delayres =  delay(100);
     });
@@ -659,12 +732,17 @@ function toggleUIConnected(connected) {
         butClearLog.removeAttribute("disabled");
         butSendConfig.removeAttribute("disabled");
         butSaveConfig.removeAttribute("disabled");
+        butGetBTMac.removeAttribute("disabled");
+        butSetBTAllow.removeAttribute("disabled");
+        
     } else {
         butGetConfig.setAttribute("disabled", true);
         butDefault.setAttribute("disabled", true);
         butClearLog.setAttribute("disabled", true);
         butSendConfig.setAttribute("disabled", true);
         butSaveConfig.setAttribute("disabled", true);
+        butGetBTMac.setAttribute("disabled", true);
+        butSetBTAllow.setAttribute("disabled", true);
         //   cb.setAttribute('disabled', true);
     }
 }

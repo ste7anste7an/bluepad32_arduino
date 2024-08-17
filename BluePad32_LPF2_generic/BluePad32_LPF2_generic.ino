@@ -56,7 +56,7 @@ byte TXD2 = 19;
 
 Adafruit_NeoPixel *strip = new Adafruit_NeoPixel(LED_COUNT, LED_PIN);  //, NEO_GRB + NEO_KHZ800);
 
-Adafruit_NeoPixel *neopixel_debug = new Adafruit_NeoPixel(1, 25);  //, neopixel lms_esp32_v2
+Adafruit_NeoPixel *neopixel_debug = new Adafruit_NeoPixel(1, 25);               //, neopixel lms_esp32_v2
 Adafruit_NeoPixel *neopixel_strip = new Adafruit_NeoPixel(LED_COUNT, LED_PIN);  //nr_leds, pin
 
 
@@ -73,7 +73,7 @@ int servo4Pin = 25;
 int minUs = 1000;
 int maxUs = 2000;
 
-
+char version[]="BluePad32 LPF2 generic version 20240817";
 #include <CmdBuffer.hpp>
 #include <CmdCallback.hpp>
 #include <CmdParser.hpp>
@@ -88,6 +88,7 @@ CmdParser myParser;
 
 char strHelp[] = "HELP";
 char strSet[] = "SET";
+char strGet[] = "GET";
 char strShow[] = "SHOW";
 char strSave[] = "SAVE";
 char strDefault[] = "DEFAULT";
@@ -135,8 +136,8 @@ byte led_mapping[9][8] = {};  //empty bitssets
 // configure as color matrix sensor by default
 EV3UARTEmulation *lpf2_sensor = new EV3UARTEmulation(RXD2, TXD2, COLOR_MATRIX, 115200);  // light sensor 0x3d
 
-char bt_allow[6] = { 0, 0, 0, 0, 0, 0 };
-bool bt_filter = false;
+//char bt_allow[6] = { 0, 0, 0, 0, 0, 0 };
+//bool bt_filter = false;
 
 int debug = 0;  // global debug; if 1 -> print debug.
 
@@ -149,6 +150,9 @@ struct Sensor {
   byte neopixel_nrleds;
   byte led_mapping[9][8];
   byte lego_colors[11][3];
+  byte bt_allow[6];
+  byte bt_mac[6];
+  bool bt_filter;
 } sensor_conf;
 // use pointer allows to dynamically change nrumber of leds or pin
 // change strip.begin() to strip->begin(), etc.
@@ -217,6 +221,38 @@ void pybricks_servo_callback(byte buf[], byte s) {
 }
 
 
+// get bluetooth address of gamepad with index idx
+/*
+  // ur.call('gamepad','B',idx)
+*/
+void read_btaddress() {
+  if (myGamepads[0] != nullptr) {  // check whether the gamepad entry exists
+    GamepadPtr myGamepad = myGamepads[0];
+    GamepadProperties properties = myGamepad->getProperties();
+    char btaddr_str[18];  // Allocate space for the formatted string (six 2-digit hexadecimal numbers plus five colons plus '\x00')
+    sprintf(btaddr_str, "%02X:%02X:%02X:%02X:%02X:%02X", properties.btaddr[0], properties.btaddr[1], properties.btaddr[2],
+            properties.btaddr[3], properties.btaddr[4], properties.btaddr[5]);
+    sensor_conf.bt_mac[0] = properties.btaddr[0];
+    sensor_conf.bt_mac[1] = properties.btaddr[1];
+    sensor_conf.bt_mac[2] = properties.btaddr[2];
+    sensor_conf.bt_mac[3] = properties.btaddr[3];
+    sensor_conf.bt_mac[4] = properties.btaddr[4];
+    sensor_conf.bt_mac[5] = properties.btaddr[5];
+  } else {
+    sensor_conf.bt_mac[0] = 0;
+    sensor_conf.bt_mac[1] = 0;
+    sensor_conf.bt_mac[2] = 0;
+    sensor_conf.bt_mac[3] = 0;
+    sensor_conf.bt_mac[4] = 0;
+    sensor_conf.bt_mac[5] = 0;
+  }
+}
+
+
+
+
+
+
 byte cmd_sensor(byte sensor_id) {
   if (sensor_id == 0x40 || sensor_id == 0x3d) {
     sensor_conf.sensor_id = sensor_id;
@@ -269,6 +305,23 @@ byte cmd_map(byte lego_led_nr, byte b1, byte b2, byte b3, byte b4, byte b5, byte
   }
 }
 
+byte cmd_set_bt(byte b0, byte b1, byte b2, byte b3, byte b4, byte b5) {
+  //Serial.println((String)"lego_led_nr="+lego_led_nr+" np_led_nr="+np_led_nr);
+  sensor_conf.bt_allow[0] = b0;
+  sensor_conf.bt_allow[1] = b1;
+  sensor_conf.bt_allow[2] = b2;
+  sensor_conf.bt_allow[3] = b3;
+  sensor_conf.bt_allow[4] = b4;
+  sensor_conf.bt_allow[5] = b5;
+  return 1;
+}
+
+
+byte cmd_set_bt_filter(byte filter) {
+  sensor_conf.bt_filter = filter;
+  return 1;
+}
+
 byte cmd_color(byte lego_col_nr, byte r, byte g, byte b) {
   //Serial.println("---------- entering cmd_color---------");
   if (r >= 0 && r <= 255 && g >= 0 && g <= 255 && b >= 0 && b <= 255 && lego_col_nr >= 0 && lego_col_nr <= 10) {
@@ -302,6 +355,15 @@ void functShow(CmdParser *myParser) {
     }
     Serial.println();
   }
+  Serial.println((String)"bt_filter: "+sensor_conf.bt_filter);
+  Serial.print("bt_allow: ");
+  for (int i=0; i<6; i++) {
+    Serial.print((String)sensor_conf.bt_allow[i] + " ");
+  }
+  Serial.println();
+  read_btaddress();
+  Serial.printf("bt_mac: %d %d %d %d %d %d \r\n", sensor_conf.bt_mac[0], sensor_conf.bt_mac[1], sensor_conf.bt_mac[2],
+                  sensor_conf.bt_mac[3], sensor_conf.bt_mac[4], sensor_conf.bt_mac[5]);
   Serial.println("OK");
 }
 
@@ -332,9 +394,16 @@ void functEeprom(CmdParser *myParser) {
   if (myParser->equalCmdParam(1, "GET")) {
     EEPROM.get(0, sensor_conf);
     Serial.println((String) "magic (string): " + sensor_conf.magic);
-    Serial.printf("magic: %s\n", sensor_conf.magic);
-    Serial.printf("strcmp: %d\n", strcmp(sensor_conf.magic, strMAGIC));
-    Serial.printf("memcmp: %d\n", memcmp(sensor_conf.magic, strMAGIC, 6));
+    Serial.printf("magic: %s\r\n", sensor_conf.magic);
+    Serial.printf("strcmp: %d\r\n", strcmp(sensor_conf.magic, strMAGIC));
+    Serial.printf("memcmp: %d\r\n", memcmp(sensor_conf.magic, strMAGIC, 6));
+  }
+  Serial.println("OK");
+  if (myParser->equalCmdParam(1, "CLEAR")) {
+    strcpy(sensor_conf.magic,"      ");
+    EEPROM.put(0, sensor_conf);
+    EEPROM.commit();
+    Serial.printf("eeprom cleared");
   }
   Serial.println("OK");
 }
@@ -360,12 +429,21 @@ void functHelp(CmdParser *myParser) {
   Serial.println("set np_fpio <gpio>                  : sets GPIO of neopixels to <gpio>");
   Serial.println("set map     <lego_led> <b1..b4>     : maps lego led number <lego_led> to neopixel bitmask <b1..b4>");
   Serial.println("set color   <lego_col>  <r> <g> <b> : sets Lego color number <lego_col> to RGB <r,g,b> with r,g,b<=255");
+  Serial.println("set bt_allow <b0> .. <b5>           : set allow bt mac address <b0:b1..:b5>");
+  Serial.println("set bt_filter <0/1>                 : set filtering of BT on or off");
+  Serial.println("get bt_allow                        : get alow bt mac address: <b0:b1..:b5>");
+
+  Serial.println("get bt_filter                       : get bt_filter setting: 0 or 1");
+  Serial.println("get bt_mac                          : get paired bt mac address returns <b0> <b1> .. <b5>");
+  Serial.println("get bt_con                          : get bt connection state <0>=not <1> is connected");
+
   Serial.println("show                                : prints the sensor configuration");
   Serial.println("save                                : saves paramaters to flash");
   Serial.println("default                             : sets all parameters to default");
   Serial.println("response <resp>                     : sets response off <resp>=0 or on <resp>=1");
   Serial.println("eeprom read                         : reads 100 bytes of EEPROM");
   Serial.println("eeprom get                          : gets configuration from eeprom");
+  Serial.println("eeprom clear                        : clear configuration from eeprom");
   Serial.println("neopixel clear                      : clears all neopixels");
   Serial.println("neopixel set <np_nr> <r> <g> <r>    : sets neopixel number <np_nr> to color <r>,<g>,<b>");
 }
@@ -377,6 +455,7 @@ void functSave(CmdParser *myParser) {
   Serial.println("OK");
 }
 
+
 void functDefault(CmdParser *myParser) {
   if (response) Serial.println("Receive Default");
   strcpy(sensor_conf.magic, "LMSESP");
@@ -385,6 +464,10 @@ void functDefault(CmdParser *myParser) {
   sensor_conf.neopixel_nrleds = LED_COUNT;
   memcpy(sensor_conf.lego_colors, lego_colors, sizeof(lego_colors));
   memcpy(sensor_conf.led_mapping, led_mapping, sizeof(led_mapping));
+  sensor_conf.bt_filter=0;
+  memset(sensor_conf.bt_allow,0,6);
+  memset(sensor_conf.bt_mac,0,6);
+  
   Serial.println("OK");
 }
 
@@ -433,8 +516,44 @@ void functSet(CmdParser *myParser) {
     } else {
       Serial.println("ERROR");
     }
+  } else if (myParser->equalCmdParam(1, "BT_ALLOW")) {
+    if (cmd_set_bt(atoi(myParser->getCmdParam(2)),
+                   atoi(myParser->getCmdParam(3)),
+                   atoi(myParser->getCmdParam(4)),
+                   atoi(myParser->getCmdParam(5)),
+                   atoi(myParser->getCmdParam(6)),
+                   atoi(myParser->getCmdParam(7)))) {
+      Serial.println("OK");
+    } else {
+      Serial.println("ERROR");
+    }
+  } else if (myParser->equalCmdParam(1, "BT_FILTER")) {
+    cmd_set_bt_filter(atoi(myParser->getCmdParam(2)));
   }
+
   if (response) Serial.println("Receive Set");
+}
+
+void functGet(CmdParser *myParser) {
+  if (myParser->equalCmdParam(1, "BT_MAC")) {
+    read_btaddress();
+    Serial.printf("bt_mac: %d %d %d %d %d %d\r\n", sensor_conf.bt_mac[0], sensor_conf.bt_mac[1], sensor_conf.bt_mac[2],
+                  sensor_conf.bt_mac[3], sensor_conf.bt_mac[4], sensor_conf.bt_mac[5]);
+
+  } else if (myParser->equalCmdParam(1, "BT_ALLOW")) {
+    Serial.printf("bt_allow: %d %d %d %d %d %d\r\n", sensor_conf.bt_allow[0], sensor_conf.bt_allow[1], sensor_conf.bt_allow[2],
+                  sensor_conf.bt_allow[3], sensor_conf.bt_allow[4], sensor_conf.bt_allow[5]);
+  } else if (myParser->equalCmdParam(1, "BT_FILTER")) {
+    Serial.printf("bt_filter: %d\r\n", sensor_conf.bt_filter);
+  } else if (myParser->equalCmdParam(1, "BT_CON")) {
+    GamepadPtr myGamepad = myGamepads[0];
+    int con = 0;
+    if (myGamepad && myGamepad->isConnected())
+      con = 1;
+    else
+      con = 0;
+    Serial.printf("bt_con: %d\r\n", con);
+  }
 }
 
 
@@ -442,36 +561,37 @@ void functSet(CmdParser *myParser) {
 // Up to 4 gamepads can be connected at the same time.
 void onConnectedGamepad(GamepadPtr gp) {
   bool foundEmptySlot = false;
-  for (int i = 0; i < BP32_MAX_GAMEPADS; i++) {
-    if (myGamepads[i] == nullptr && !foundEmptySlot) {
-      Serial.printf("CALLBACK: Gamepad is connected, index=%d\n", i);
-      // Additionally, you can get certain gamepad properties like:
-      // Model, VID, PID, BTAddr, flags, etc.
-      GamepadProperties properties = gp->getProperties();
-      char btaddr_str[18];                                                                                                                                                                       // Allocate space for the formatted string (six 2-digit hexadecimal numbers plus five colons)
-      sprintf(btaddr_str, "%02X:%02X:%02X:%02X:%02X:%02X", properties.btaddr[0], properties.btaddr[1], properties.btaddr[2], properties.btaddr[3], properties.btaddr[4], properties.btaddr[5]);  // Format the address as a string
+  if (myGamepads[0] == nullptr && !foundEmptySlot) {
+    Serial.printf("CALLBACK: Gamepad is connected\n");
+    // Additionally, you can get certain gamepad properties like:
+    // Model, VID, PID, BTAddr, flags, etc.
+    GamepadProperties properties = gp->getProperties();
+    char btaddr_str[18];                                                                                                                                                                       // Allocate space for the formatted string (six 2-digit hexadecimal numbers plus five colons)
+    sprintf(btaddr_str, "%02X:%02X:%02X:%02X:%02X:%02X", properties.btaddr[0], properties.btaddr[1], properties.btaddr[2], properties.btaddr[3], properties.btaddr[4], properties.btaddr[5]);  // Format the address as a string
 
-      Serial.printf("Gamepad model: %s, VID=0x%04x, PID=0x%04x  bt_addr=%s\n",
-                    gp->getModelName().c_str(), properties.vendor_id,
-                    properties.product_id, btaddr_str);
 
-      if (bt_filter) {
-        Serial.printf("received: %02X:%02X:%02X:%02X:%02X:%02X ", properties.btaddr[0], properties.btaddr[1], properties.btaddr[2], properties.btaddr[3], properties.btaddr[4], properties.btaddr[5]);
-        Serial.printf("filtered: %02X:%02X:%02X:%02X:%02X:%02X\n", bt_allow[0], bt_allow[1], bt_allow[2], bt_allow[3], bt_allow[4], bt_allow[5]);
-        if (memcmp(bt_allow, properties.btaddr, 6) == 0) {  // bt_allow
-          myGamepads[i] = gp;
-          foundEmptySlot = true;
-          Serial.printf("bt_filtered: allowed\n");
-        } else {
-          gp->disconnect();
-          Serial.printf("bt_filtered: gamepad disconnected\n");
-        }
-        break;
-      } else {
-        Serial.printf("un_filtered: connected\n");
-        myGamepads[i] = gp;
+    Serial.printf("Gamepad model: %s, VID=0x%04x, PID=0x%04x  bt_addr=%s\r\n",
+                  gp->getModelName().c_str(), properties.vendor_id,
+                  properties.product_id, btaddr_str);
+    read_btaddress();
+    if (sensor_conf.bt_filter) {
+      Serial.printf("received: %02X:%02X:%02X:%02X:%02X:%02X ", properties.btaddr[0], properties.btaddr[1], properties.btaddr[2], properties.btaddr[3], properties.btaddr[4], properties.btaddr[5]);
+      Serial.printf("filtered: %02X:%02X:%02X:%02X:%02X:%02X\r\n", sensor_conf.bt_allow[0], sensor_conf.bt_allow[1],
+                    sensor_conf.bt_allow[2], sensor_conf.bt_allow[3],
+                    sensor_conf.bt_allow[4], sensor_conf.bt_allow[5]);
+      if (memcmp(sensor_conf.bt_allow, properties.btaddr, 6) == 0) {  // bt_allow
+        myGamepads[0] = gp;
         foundEmptySlot = true;
+        Serial.printf("bt_filtered: allowed\r\n");
+      } else {
+        gp->disconnect();
+        Serial.printf("bt_filtered: gamepad disconnected\r\n");
       }
+
+    } else {
+      Serial.printf("un_filtered: connected\r\n");
+      myGamepads[0] = gp;
+      foundEmptySlot = true;
     }
   }
   if (!foundEmptySlot) {
@@ -483,20 +603,22 @@ void onConnectedGamepad(GamepadPtr gp) {
 void onDisconnectedGamepad(GamepadPtr gp) {
   bool foundGamepad = false;
 
-  for (int i = 0; i < BP32_MAX_GAMEPADS; i++) {
-    if (myGamepads[i] == gp) {
-      Serial.printf("CALLBACK: Gamepad is disconnected from index=%d\n", i);
-      myGamepads[i] = nullptr;
+    if (myGamepads[0] == gp) {
+      Serial.printf("CALLBACK: Gamepad is disconnected\r\n");
+      myGamepads[0] = nullptr;
       foundGamepad = true;
-      break;
+      
     }
-  }
-
+  
   if (!foundGamepad) {
     Serial.println(
       "CALLBACK: Gamepad disconnected, but not found in myGamepads");
   }
 }
+
+
+
+
 
 
 uint8_t old_led = 0, rumble_force, rumble_duration;
@@ -629,6 +751,7 @@ void setup() {
   cmdCallback.addCmd(strHelp, &functHelp);
   cmdCallback.addCmd(strResponse, &functResponse);
   cmdCallback.addCmd(strSet, &functSet);
+  cmdCallback.addCmd(strGet, &functGet);
   cmdCallback.addCmd(strShow, &functShow);
   cmdCallback.addCmd(strSave, &functSave);
   cmdCallback.addCmd(strDefault, &functDefault);
@@ -676,6 +799,8 @@ void setup() {
   } else {
     Serial.printf("ERROR: Failure connecting LMS-ESP32 to the SPIKE3 hub. Press RESET button on LMS-ESp32.\r\n");
   }
+  Serial.println(version);
+  Serial.println((String)"Running on "+ESP.getChipModel());
   Serial.println("Go to https://bluepad.antonsmindstorms.com to configure the LMS-ESp32.\r\n");
   delay(200);
   // Setup the Bluepad32 callbacks
