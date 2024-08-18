@@ -625,8 +625,7 @@ async function readLoop() {
                 new_config = 0;
                 field_bt_allow.value = parsedconfig.bt_allow;
                 field_bt_mac.value = parsedconfig.bt_mac;
-                
-                checkboxBTFilter.value = parsedconfig.bt_filter;
+                checkboxBTFilter.checked = (parsedconfig.bt_filter==1);
 
                // console.log(value);
             }
