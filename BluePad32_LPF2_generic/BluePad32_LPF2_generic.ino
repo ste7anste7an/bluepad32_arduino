@@ -59,7 +59,8 @@ Adafruit_NeoPixel *strip = new Adafruit_NeoPixel(LED_COUNT, LED_PIN);  //, NEO_G
 Adafruit_NeoPixel *neopixel_debug = new Adafruit_NeoPixel(1, 25);               //, neopixel lms_esp32_v2
 Adafruit_NeoPixel *neopixel_strip = new Adafruit_NeoPixel(LED_COUNT, LED_PIN);  //nr_leds, pin
 
-
+byte connected = 0; 
+byte last_status = 0;
 Servo servo1;
 Servo servo2;
 Servo servo3;
@@ -73,7 +74,7 @@ int servo4Pin = 25;
 int minUs = 1000;
 int maxUs = 2000;
 
-char version[]="BluePad32 LPF2 generic version 20240817";
+char version[] = "BluePad32 LPF2 generic version 20240824";
 #include <CmdBuffer.hpp>
 #include <CmdCallback.hpp>
 #include <CmdParser.hpp>
@@ -170,9 +171,9 @@ void pybricks_neopixel_callback(byte buf[], byte s) {
   byte num_pixels = strip->numPixels();
   byte cmd = buf[0] & 0x7f;  // all but bit 7 (write) and strip lower 4 bits.
   byte write_leds = buf[0] & 0x80;
-  Serial.printf("neopixel: cmd %02X write_leds %02X\r\n", cmd, write_leds);
-  for (int i = 0; i < s; i++) Serial.printf("%02X ", buf[i]);
-  Serial.printf("\n");
+  //Serial.printf("neopixel: cmd %02X write_leds %02X\r\n", cmd, write_leds);
+  //for (int i = 0; i < s; i++) Serial.printf("%02X ", buf[i]);
+  //Serial.printf("\n");
   if (cmd == FILL) {
     for (int i = 0; i < num_pixels; i++) {
       strip->setPixelColor(i, buf[1], buf[2], buf[3]);
@@ -207,13 +208,13 @@ void pybricks_neopixel_callback(byte buf[], byte s) {
 void pybricks_servo_callback(byte buf[], byte s) {
   byte nr_short = int(s / 2);
   short vals[nr_short];
-  Serial.printf("size %d, nr short %d\n", s, nr_short);
+  //Serial.printf("size %d, nr short %d\n", s, nr_short);
   for (int i = 0; i < nr_short; i++) {
     vals[i] = buf[i * 2] + buf[i * 2 + 1] * 256;  // in Block SPIKE language only up to 128 can be used:  vals[i]=buf[i*2]+buf[i*2+1]*128;
-    Serial.printf("vals[%d]=%d\n", i, vals[i]);
+    //Serial.printf("vals[%d]=%d\n", i, vals[i]);
   }
 
-  Serial.printf("servo %d %d %d %d\n", vals[0], vals[1], vals[2], vals[3]);
+  //Serial.printf("servo %d %d %d %d\n", vals[0], vals[1], vals[2], vals[3]);
   servo1.write(vals[0]);
   servo2.write(vals[1]);
   servo3.write(vals[2]);
@@ -247,10 +248,6 @@ void read_btaddress() {
     sensor_conf.bt_mac[5] = 0;
   }
 }
-
-
-
-
 
 
 byte cmd_sensor(byte sensor_id) {
@@ -355,15 +352,15 @@ void functShow(CmdParser *myParser) {
     }
     Serial.println();
   }
-  Serial.println((String)"bt_filter: "+sensor_conf.bt_filter);
+  Serial.println((String) "bt_filter: " + sensor_conf.bt_filter);
   Serial.print("bt_allow: ");
-  for (int i=0; i<6; i++) {
+  for (int i = 0; i < 6; i++) {
     Serial.print((String)sensor_conf.bt_allow[i] + " ");
   }
   Serial.println();
   read_btaddress();
   Serial.printf("bt_mac: %d %d %d %d %d %d \r\n", sensor_conf.bt_mac[0], sensor_conf.bt_mac[1], sensor_conf.bt_mac[2],
-                  sensor_conf.bt_mac[3], sensor_conf.bt_mac[4], sensor_conf.bt_mac[5]);
+                sensor_conf.bt_mac[3], sensor_conf.bt_mac[4], sensor_conf.bt_mac[5]);
   Serial.println("OK");
 }
 
@@ -400,7 +397,7 @@ void functEeprom(CmdParser *myParser) {
   }
   Serial.println("OK");
   if (myParser->equalCmdParam(1, "CLEAR")) {
-    strcpy(sensor_conf.magic,"      ");
+    strcpy(sensor_conf.magic, "      ");
     EEPROM.put(0, sensor_conf);
     EEPROM.commit();
     Serial.printf("eeprom cleared");
@@ -426,7 +423,7 @@ void functHelp(CmdParser *myParser) {
   Serial.println("Receive Help");
   Serial.println("set sensor  <id>                    : set sensor id");
   Serial.println("set np_nr   <nr>                    : sets number of neopixels to <nr>");
-  Serial.println("set np_fpio <gpio>                  : sets GPIO of neopixels to <gpio>");
+  Serial.println("set np_gpio <gpio>                  : sets GPIO of neopixels to <gpio>");
   Serial.println("set map     <lego_led> <b1..b4>     : maps lego led number <lego_led> to neopixel bitmask <b1..b4>");
   Serial.println("set color   <lego_col>  <r> <g> <b> : sets Lego color number <lego_col> to RGB <r,g,b> with r,g,b<=255");
   Serial.println("set bt_allow <b0> .. <b5>           : set allow bt mac address <b0:b1..:b5>");
@@ -464,10 +461,10 @@ void functDefault(CmdParser *myParser) {
   sensor_conf.neopixel_nrleds = LED_COUNT;
   memcpy(sensor_conf.lego_colors, lego_colors, sizeof(lego_colors));
   memcpy(sensor_conf.led_mapping, led_mapping, sizeof(led_mapping));
-  sensor_conf.bt_filter=0;
-  memset(sensor_conf.bt_allow,0,6);
-  memset(sensor_conf.bt_mac,0,6);
-  
+  sensor_conf.bt_filter = 0;
+  memset(sensor_conf.bt_allow, 0, 6);
+  memset(sensor_conf.bt_mac, 0, 6);
+
   Serial.println("OK");
 }
 
@@ -584,8 +581,8 @@ void onConnectedGamepad(GamepadPtr gp) {
         foundEmptySlot = true;
         Serial.printf("bt_filtered: allowed\r\n");
       } else {
-        gp->disconnect();
-        Serial.printf("bt_filtered: gamepad disconnected\r\n");
+        // gp->disconnect();
+        Serial.printf("bt_filtered: gamepad not connected\r\n");
       }
 
     } else {
@@ -597,19 +594,29 @@ void onConnectedGamepad(GamepadPtr gp) {
   if (!foundEmptySlot) {
     Serial.println(
       "CALLBACK: Gamepad connected, but could not found empty slot");
+  } else {
+    if (is_lms_esp32_version2 == 1) { 
+      byte status=lpf2_sensor->get_status();
+      neopixel_debug->setPixelColor(0, 10-10*status, 10*status, 10);
+      neopixel_debug->show();
+    }
   }
 }
 
 void onDisconnectedGamepad(GamepadPtr gp) {
   bool foundGamepad = false;
 
-    if (myGamepads[0] == gp) {
-      Serial.printf("CALLBACK: Gamepad is disconnected\r\n");
-      myGamepads[0] = nullptr;
-      foundGamepad = true;
-      
+  if (myGamepads[0] == gp) {
+    Serial.printf("CALLBACK: Gamepad is disconnected\r\n");
+    myGamepads[0] = nullptr;
+    foundGamepad = true;
+    if (is_lms_esp32_version2 == 1) { 
+      byte status=lpf2_sensor->get_status();
+      neopixel_debug->setPixelColor(0, 10-10*status, 10*status, 0);
+      neopixel_debug->show();
     }
-  
+  }
+
   if (!foundGamepad) {
     Serial.println(
       "CALLBACK: Gamepad disconnected, but not found in myGamepads");
@@ -713,7 +720,7 @@ void config_sensor() {
   }
 }
 
-byte connected = 0;
+
 // Arduino setup function. Runs in CPU 1
 void setup() {
   // disable brownout
@@ -790,6 +797,7 @@ void setup() {
 
   connected = lpf2_sensor->reset();
   if (connected == 1) {
+    last_status = lpf2_sensor->get_status();
     if (is_lms_esp32_version2 == 1) {
       // green led
       neopixel_debug->setPixelColor(0, 0, 10, 0);
@@ -800,7 +808,7 @@ void setup() {
     Serial.printf("ERROR: Failure connecting LMS-ESP32 to the SPIKE3 hub. Press RESET button on LMS-ESp32.\r\n");
   }
   Serial.println(version);
-  Serial.println((String)"Running on "+ESP.getChipModel());
+  Serial.println((String) "Running on " + ESP.getChipModel());
   Serial.println("Go to https://bluepad.antonsmindstorms.com to configure the LMS-ESp32.\r\n");
   delay(200);
   // Setup the Bluepad32 callbacks
@@ -834,6 +842,17 @@ unsigned long last_reading = 0;
 int last_mode = 0;
 
 void loop() {
+  byte status = lpf2_sensor->get_status();
+  byte gamepad_connected=0;
+  if ((status != last_status) && (is_lms_esp32_version2 == 1)) {
+    last_status=status;
+    GamepadPtr myGamepad = myGamepads[0];
+    if (myGamepad && myGamepad->isConnected())
+      gamepad_connected=1;
+      neopixel_debug->setPixelColor(0, 10-10*status, 10*status, 10*gamepad_connected);
+      neopixel_debug->show();
+          
+  }
   refresh_BP32++;
   if (refresh_BP32 == 10) {
     BP32.update();
@@ -872,13 +891,7 @@ void loop() {
         GamepadPtr myGamepad = myGamepads[0];
         //Serial.print("#");
         if (myGamepad && myGamepad->isConnected()) {
-          if (is_lms_esp32_version2 == 1) {
-            // blue led
-            neopixel_debug->setPixelColor(0, 0, 0, 10);
-            neopixel_debug->show();
-          }
           if ((last_mode == 0) or (last_mode == 2)) {  // spke3
-
             a = (clip((myGamepad->axisX() + 512), 0, 1023) >> 2);
             b = (clip((myGamepad->axisY() + 512), 0, 1023) >> 2);
             if (a > 127) {
@@ -917,20 +930,12 @@ void loop() {
         //sensor.send_data8(bb, nr_bytes);
         lpf2_sensor->send_data8(bb, 16);  // always write 16 bytes (9 real bytes + padding, otherwise pybricks won't accept)
       } else {                            // COLOR SENSOR
-
-        //for (int i = 0; i < BP32_MAX_GAMEPADS; i++) {
         GamepadPtr myGamepad = myGamepads[0];
-
         if ((last_mode == 0) || (last_mode == 1)) {  // spike3
           short bb[16];
           byte a, b;
           memset(bb, 0, 16);
           if (myGamepad && myGamepad->isConnected()) {
-            if (is_lms_esp32_version2 == 1) {
-              // blue led
-              neopixel_debug->setPixelColor(0, 0, 0, 10);
-              neopixel_debug->show();
-            }
             a = clip((myGamepad->axisX() + 512), 0, 1023) >> 2;
             b = clip((myGamepad->axisY() + 512), 0, 1023) >> 2;
             bb[0] = a + b * 256;
