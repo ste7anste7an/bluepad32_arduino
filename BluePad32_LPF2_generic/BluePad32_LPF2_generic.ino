@@ -35,11 +35,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
+// get a slightly adapted LPF2 version from the program directory
 #include "LPF2.h"
 #include <Wire.h>
+// Adafruit NeoPixe by Adafruit version 1.12.3
 #include <Adafruit_NeoPixel.h>
-// v1.12.0 can be installed via library manager
+// ESP32Servo by Kevin Harrington, John K.Bennett v3.0.5 can be installed via library manager
 #include <ESP32Servo.h>
 
 GamepadPtr myGamepads[BP32_MAX_GAMEPADS];
