@@ -675,15 +675,23 @@ void config_sensor() {
     lpf2_sensor = new EV3UARTEmulation(RXD2, TXD2, COLOR_SENSOR, 115200);
     sensor_conf.sensor_id = COLOR_SENSOR;
     lpf2_sensor->create_mode("COLOR\x00\x80\x00\x00\x00\x05\x04", true, DATA16, 8, 2, 0, -100.0f, 100.0f, -100.0f, 100.0f, -100.0f, 100.0f, "PCT", ABSOLUTE, ABSOLUTE);  //map in and map out unit = "XYBD" = x, y, buttons, d-pad
-    lpf2_sensor->create_mode("REFLT\x00\x80\x00\x00\x00\x05\x04", true, DATA16, 8, 3, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "RAW", ABSOLUTE, ABSOLUTE);           //map in and map out unit = "XYBD" = x, y, buttons, d-pad
-    lpf2_sensor->create_mode("AMBI\x00\x80\x00\x00\x00\x05\x04", true, DATA8, 1, 3, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "XYBD", ABSOLUTE, ABSOLUTE);            //map in and map out unit = "XYBD" = x, y, buttons, d-pad
-    lpf2_sensor->create_mode("LIGHT\x00\x80\x00\x00\x00\x05\x04", true, DATA8, 3, 3, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "XYBD", ABSOLUTE, ABSOLUTE);           //map in and map out unit = "XYBD" = x, y, buttons, d-pad
-    lpf2_sensor->create_mode("RREFL\x00\x80\x00\x00\x00\x05\x04", true, DATA8, 2, 4, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "XYBD", ABSOLUTE, ABSOLUTE);           //map in and map out unit = "XYBD" = x, y, buttons, d-pad
-    lpf2_sensor->create_mode("RGB I\x00\x80\x00\x00\x00\x05\x04", true, DATA16, 4, 4, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "XYBD", ABSOLUTE, ABSOLUTE);          //map in and map out unit = "XYBD" = x, y, buttons, d-pad
-    lpf2_sensor->create_mode("HSV\x00\x80\x00\x00\x00\x05\x04", true, DATA16, 3, 4, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "XYBD", ABSOLUTE, ABSOLUTE);            //map in and map out unit = "XYBD" = x, y, buttons, d-pad
-    lpf2_sensor->create_mode("SHSV\x00\x80\x00\x00\x00\x05\x04", true, DATA16, 4, 4, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "XYBD", ABSOLUTE, ABSOLUTE);           //map in and map out unit = "XYBD" = x, y, buttons, d-pad
-    lpf2_sensor->get_mode(0)->setCallback(pybricks_neopixel_callback);                                                                                                   // attach call back function to mode 0
-    lpf2_sensor->get_mode(1)->setCallback(pybricks_servo_callback);                                                                                                      // attach call back function to mode 1
+    lpf2_sensor->create_mode("REFLT", true, DATA16, 8, 3, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "RAW", ABSOLUTE, ABSOLUTE);           //map in and map out unit = "XYBD" = x, y, buttons, d-pad
+   // lpf2_sensor->create_mode("AMBI\x00\x80\x00\x00\x00\x05\x04", true, DATA8, 1, 3, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "XYBD", ABSOLUTE, ABSOLUTE);            //map in and map out unit = "XYBD" = x, y, buttons, d-pad
+   // lpf2_sensor->create_mode("LIGHT\x00\x80\x00\x00\x00\x05\x04", true, DATA8, 3, 3, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "XYBD", ABSOLUTE, ABSOLUTE);           //map in and map out unit = "XYBD" = x, y, buttons, d-pad
+   // lpf2_sensor->create_mode("RREFL\x00\x80\x00\x00\x00\x05\x04", true, DATA8, 2, 4, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "XYBD", ABSOLUTE, ABSOLUTE);           //map in and map out unit = "XYBD" = x, y, buttons, d-pad
+   // lpf2_sensor->create_mode("RGB I\x00\x80\x00\x00\x00\x05\x04", true, DATA16, 4, 4, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "XYBD", ABSOLUTE, ABSOLUTE);          //map in and map out unit = "XYBD" = x, y, buttons, d-pad
+   // lpf2_sensor->create_mode("HSV\x00\x80\x00\x00\x00\x05\x04", true, DATA16, 3, 4, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "XYBD", ABSOLUTE, ABSOLUTE);            //map in and map out unit = "XYBD" = x, y, buttons, d-pad
+   // lpf2_sensor->create_mode("SHSV\x00\x80\x00\x00\x00\x05\x04", true, DATA16, 4, 4, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "XYBD", ABSOLUTE, ABSOLUTE);           //map in and map out unit = "XYBD" = x, y, buttons, d-pad
+    // lpf2_sensor->create_mode("COLOR", true, DATA16, 8, 2, 0, -100.0f, 100.0f, -100.0f, 100.0f, -100.0f, 100.0f, "PCT", ABSOLUTE, ABSOLUTE);  //map in and map out unit = "XYBD" = x, y, buttons, d-pad
+    // lpf2_sensor->create_mode("REFLT", true, DATA16, 8, 3, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "RAW", ABSOLUTE, ABSOLUTE);           //map in and map out unit = "XYBD" = x, y, buttons, d-pad
+    // lpf2_sensor->create_mode("AMBI", true, DATA8, 1, 3, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "XYBD", ABSOLUTE, ABSOLUTE);            //map in and map out unit = "XYBD" = x, y, buttons, d-pad
+    // lpf2_sensor->create_mode("LIGHT", true, DATA8, 3, 3, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "XYBD", ABSOLUTE, ABSOLUTE);           //map in and map out unit = "XYBD" = x, y, buttons, d-pad
+    // lpf2_sensor->create_mode("RREFL", true, DATA8, 2, 4, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "XYBD", ABSOLUTE, ABSOLUTE);           //map in and map out unit = "XYBD" = x, y, buttons, d-pad
+    // lpf2_sensor->create_mode("RGB I", true, DATA16, 4, 4, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "XYBD", ABSOLUTE, ABSOLUTE);          //map in and map out unit = "XYBD" = x, y, buttons, d-pad
+    // lpf2_sensor->create_mode("HSV", true, DATA16, 3, 4, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "XYBD", ABSOLUTE, ABSOLUTE);            //map in and map out unit = "XYBD" = x, y, buttons, d-pad
+    // lpf2_sensor->create_mode("SHSV", true, DATA16, 4, 4, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "XYBD", ABSOLUTE, ABSOLUTE);           //map in and map out unit = "XYBD" = x, y, buttons, d-pad
+    //lpf2_sensor->get_mode(0)->setCallback(pybricks_neopixel_callback);                                                                                                   // attach call back function to mode 0
+    //lpf2_sensor->get_mode(1)->setCallback(pybricks_servo_callback);                                                                                                      // attach call back function to mode 1
 
     Serial.printf("LOG: This sensor is configured as Color Sensor\r\n");
   } else {
@@ -966,8 +974,8 @@ void loop() {
 
       last_reading = millis();
     }
-    vTaskDelay(1);
+    vTaskDelay(10);
   }
-  vTaskDelay(1);
+  vTaskDelay(10);
   //delay(150);
 }
