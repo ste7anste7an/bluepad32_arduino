@@ -30,7 +30,9 @@
 #include "soc/rtc_cntl_reg.h"
 
 #include <Bluepad32.h>
+// installed version 4.1.0
 // see https://github.com/ricardoquesada/bluepad32/blob/main/docs/plat_arduino.md
+#include <bt/uni_bt_allowlist.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -40,8 +42,30 @@
 #include <Wire.h>
 // Adafruit NeoPixe by Adafruit version 1.12.3
 #include <Adafruit_NeoPixel.h>
-// ESP32Servo by Kevin Harrington, John K.Bennett v3.0.5 can be installed via library manager
+// ESP32Servo by Kevin Harrington, John K.Bennett v3.0.6 can be installed via library manager
 #include <ESP32Servo.h>
+/*
+patch ESP32PWM.h in <library>/ESP32Servo/ESP32PWM.h:
+change:
+#else
+		if ((pin == 2) || //1
+				(pin == 4) || //1
+				(pin == 5) || //1
+				((pin >= 12) && (pin <= 19)) || //8
+				((pin >= 21) && (pin <= 23)) || //3
+				((pin >= 25) && (pin <= 27)) || //3
+				(pin == 32) || (pin == 33)) //2
+to:
+#else
+		if ((pin == 2) || //1
+				(pin == 4) || //1
+				(pin == 5) || //1
+				((pin >= 12) && (pin <= 20)) || //8
+				((pin >= 21) && (pin <= 23)) || //3
+				((pin >= 25) && (pin <= 27)) || //3
+				(pin == 32) || (pin == 33)) //2
+
+*/
 
 GamepadPtr myGamepads[BP32_MAX_GAMEPADS];
 byte RXD2 = 18;
@@ -60,7 +84,7 @@ Adafruit_NeoPixel *strip = new Adafruit_NeoPixel(LED_COUNT, LED_PIN);  //, NEO_G
 Adafruit_NeoPixel *neopixel_debug = new Adafruit_NeoPixel(1, 25);               //, neopixel lms_esp32_v2
 Adafruit_NeoPixel *neopixel_strip = new Adafruit_NeoPixel(LED_COUNT, LED_PIN);  //nr_leds, pin
 
-byte connected = 0; 
+byte connected = 0;
 byte last_status = 0;
 Servo servo1;
 Servo servo2;
@@ -75,7 +99,7 @@ int servo4Pin = 25;
 int minUs = 1000;
 int maxUs = 2000;
 
-char version[] = "BluePad32 LPF2 generic version 20240824";
+char version[] = "BluePad32 LPF2 generic version 20241231";
 #include <CmdBuffer.hpp>
 #include <CmdCallback.hpp>
 #include <CmdParser.hpp>
@@ -187,7 +211,7 @@ void pybricks_neopixel_callback(byte buf[], byte s) {
     // [SET][nr_leds][start_led][r0,g0,b0][r1,g1,b1][r2,g2,b2][r3,g3,b3][0]
     byte nr_leds = buf[1];
     byte start_led = buf[2];
-    Serial.printf("Neopixel SET %d %d num_pixels %d\r\n", nr_leds, start_led, num_pixels);
+    //Serial.printf("Neopixel SET %d %d num_pixels %d\r\n", nr_leds, start_led, num_pixels);
     if ((nr_leds == 0) or (nr_leds > 4)) nr_leds = 4;
     if (start_led + nr_leds <= num_pixels) {
       for (int i = 0; i < nr_leds; i++) {
@@ -223,6 +247,27 @@ void pybricks_servo_callback(byte buf[], byte s) {
 }
 
 
+
+void add_mac_to_allow_list(byte bt_mac[6]) {
+    char mac_addr[40];
+    sprintf(mac_addr,"recv %02X:%02X:%02X:%02X:%02X:%02X",
+          bt_mac[0],bt_mac[1],bt_mac[2],bt_mac[3],bt_mac[4],bt_mac[5]);
+          Serial.println(mac_addr);
+    if (uni_bt_allowlist_is_allowed_addr(bt_mac)) {
+        sprintf(mac_addr,"in allow %02X:%02X:%02X:%02X:%02X:%02X",
+          bt_mac[0],bt_mac[1],bt_mac[2],bt_mac[3],bt_mac[4],bt_mac[5]);
+          Serial.println(mac_addr);
+    } else {
+      uni_bt_allowlist_remove_all();
+      uni_bt_allowlist_add_addr(bt_mac);
+       sprintf(mac_addr,"adding %02X:%02X:%02X:%02X:%02X:%02X",
+          bt_mac[0],bt_mac[1],bt_mac[2],bt_mac[3],bt_mac[4],bt_mac[5]);
+          Serial.println(mac_addr);
+    }
+}
+
+
+
 // get bluetooth address of gamepad with index idx
 /*
   // ur.call('gamepad','B',idx)
@@ -249,6 +294,7 @@ void read_btaddress() {
     sensor_conf.bt_mac[5] = 0;
   }
 }
+
 
 
 byte cmd_sensor(byte sensor_id) {
@@ -311,12 +357,35 @@ byte cmd_set_bt(byte b0, byte b1, byte b2, byte b3, byte b4, byte b5) {
   sensor_conf.bt_allow[3] = b3;
   sensor_conf.bt_allow[4] = b4;
   sensor_conf.bt_allow[5] = b5;
+  //char bt_addr_str[18];
+  //sprintf(bt_addr_str, "%02X:%02X:%02X:%02X:%02X:%02X",b0,b1,b2,b3,b4,b5);
+  add_mac_to_allow_list(sensor_conf.bt_allow);
+  // uni_bt_allowlist_add_addr(sensor_conf.bt_allow);  
   return 1;
+}
+
+void cmd_get_bt_in_allow_list(byte b0, byte b1, byte b2, byte b3, byte b4, byte b5) {
+  byte mac[6];
+  mac[0]=b0; mac[1]=b1; mac[2]=b2; mac[3]=b3; mac[4]=b4; mac[5]=b5;
+  if (uni_bt_allowlist_is_allowed_addr(mac)) {
+    char bt_addr_str[18];
+    sprintf(bt_addr_str, "%02X:%02X:%02X:%02X:%02X:%02X",b0,b1,b2,b3,b4,b5);
+    Serial.println((String)bt_addr_str+" is in allow list");
+  }
 }
 
 
 byte cmd_set_bt_filter(byte filter) {
   sensor_conf.bt_filter = filter;
+  if (filter==0) {
+    if (uni_bt_allowlist_is_enabled()) {
+      uni_bt_allowlist_set_enabled(false);
+    }
+  } else if (filter==1) {
+    if (!uni_bt_allowlist_is_enabled()) {
+      uni_bt_allowlist_set_enabled(true);
+    }
+  }
   return 1;
 }
 
@@ -362,6 +431,8 @@ void functShow(CmdParser *myParser) {
   read_btaddress();
   Serial.printf("bt_mac: %d %d %d %d %d %d \r\n", sensor_conf.bt_mac[0], sensor_conf.bt_mac[1], sensor_conf.bt_mac[2],
                 sensor_conf.bt_mac[3], sensor_conf.bt_mac[4], sensor_conf.bt_mac[5]);
+  //Serial.println((String) "bt_allow_new: " + sensor_conf.bt_allow_new);
+  //Serial.println((String) "bt_forget: " + sensor_conf.bt_forget);
   Serial.println("OK");
 }
 
@@ -429,11 +500,17 @@ void functHelp(CmdParser *myParser) {
   Serial.println("set color   <lego_col>  <r> <g> <b> : sets Lego color number <lego_col> to RGB <r,g,b> with r,g,b<=255");
   Serial.println("set bt_allow <b0> .. <b5>           : set allow bt mac address <b0:b1..:b5>");
   Serial.println("set bt_filter <0/1>                 : set filtering of BT on or off");
+  Serial.println("set bt_forget                       : forget old paired gamepads");
+  Serial.println("set bt_clear_allow_list             : remove all items from allow list");
+  Serial.println("set bt_allow_new                    : falow new gamepads to pair");
   Serial.println("get bt_allow                        : get alow bt mac address: <b0:b1..:b5>");
+
 
   Serial.println("get bt_filter                       : get bt_filter setting: 0 or 1");
   Serial.println("get bt_mac                          : get paired bt mac address returns <b0> <b1> .. <b5>");
   Serial.println("get bt_con                          : get bt connection state <0>=not <1> is connected");
+  Serial.println("get bt_allow_list                   : print bt allow list");
+  Serial.println("get bt_in_allow_list                : print bt allow list");
 
   Serial.println("show                                : prints the sensor configuration");
   Serial.println("save                                : saves paramaters to flash");
@@ -463,9 +540,12 @@ void functDefault(CmdParser *myParser) {
   memcpy(sensor_conf.lego_colors, lego_colors, sizeof(lego_colors));
   memcpy(sensor_conf.led_mapping, led_mapping, sizeof(led_mapping));
   sensor_conf.bt_filter = 0;
+  //sensor_conf.bt_allow_new = 1;
+  //sensor_conf.bt_forget = 0;
   memset(sensor_conf.bt_allow, 0, 6);
   memset(sensor_conf.bt_mac, 0, 6);
-
+  uni_bt_allowlist_remove_all();
+  uni_bt_allowlist_set_enabled(false);
   Serial.println("OK");
 }
 
@@ -503,9 +583,17 @@ void functSet(CmdParser *myParser) {
     } else {
       Serial.println("ERROR");
     }
-  } else
+/*  } else if (myParser->equalCmdParam(1, "BT_ALLOW_NEW")) {
+    sensor_conf.bt_allow_new = atoi(myParser->getCmdParam(2));
+    BP32.enableNewBluetoothConnections(sensor_conf.bt_allow_new);
 
-    if (myParser->equalCmdParam(1, "COLOR")) {
+  } else if (myParser->equalCmdParam(1, "BT_FORGET")) {
+    sensor_conf.bt_forget = atoi(myParser->getCmdParam(2));
+    if (sensor_conf.bt_forget) {
+
+      BP32.forgetBluetoothKeys();
+    } */
+  } else if (myParser->equalCmdParam(1, "COLOR")) {
     if (cmd_color(atoi(myParser->getCmdParam(2)),
                   atoi(myParser->getCmdParam(3)),
                   atoi(myParser->getCmdParam(4)),
@@ -527,6 +615,9 @@ void functSet(CmdParser *myParser) {
     }
   } else if (myParser->equalCmdParam(1, "BT_FILTER")) {
     cmd_set_bt_filter(atoi(myParser->getCmdParam(2)));
+  } else if (myParser->equalCmdParam(1, "BT_CLEAR_ALLOW_LIST")) {
+    uni_bt_allowlist_remove_all();
+    Serial.println("allowlist removed");
   }
 
   if (response) Serial.println("Receive Set");
@@ -538,6 +629,13 @@ void functGet(CmdParser *myParser) {
     Serial.printf("bt_mac: %d %d %d %d %d %d\r\n", sensor_conf.bt_mac[0], sensor_conf.bt_mac[1], sensor_conf.bt_mac[2],
                   sensor_conf.bt_mac[3], sensor_conf.bt_mac[4], sensor_conf.bt_mac[5]);
 
+  } else if (myParser->equalCmdParam(1, "BT_IN_ALLOW_LIST")) {
+    cmd_get_bt_in_allow_list(atoi(myParser->getCmdParam(2)),
+                   atoi(myParser->getCmdParam(3)),
+                   atoi(myParser->getCmdParam(4)),
+                   atoi(myParser->getCmdParam(5)),
+                   atoi(myParser->getCmdParam(6)),
+                   atoi(myParser->getCmdParam(7))); 
   } else if (myParser->equalCmdParam(1, "BT_ALLOW")) {
     Serial.printf("bt_allow: %d %d %d %d %d %d\r\n", sensor_conf.bt_allow[0], sensor_conf.bt_allow[1], sensor_conf.bt_allow[2],
                   sensor_conf.bt_allow[3], sensor_conf.bt_allow[4], sensor_conf.bt_allow[5]);
@@ -551,7 +649,22 @@ void functGet(CmdParser *myParser) {
     else
       con = 0;
     Serial.printf("bt_con: %d\r\n", con);
+  } else if (myParser->equalCmdParam(1, "BT_ALLOW_LIST")) {
+    const bd_addr_t* addr; 
+    int nr;
+    char mac_addr[17];
+    Serial.println("allowed mac addresses:");
+    uni_bt_allowlist_get_all(&addr, &nr);
+    Serial.println((String)"nr="+nr);
+    for (int i=0; i<nr; i++) {
+      sprintf(mac_addr,"%02X:%02X:%02X:%02X:%02X:%02X",
+          addr[i][0],addr[i][1],addr[i][2],addr[i][3],addr[i][4],addr[i][5]);
+      Serial.println(mac_addr);
+    }
+
   }
+
+
 }
 
 
@@ -572,7 +685,7 @@ void onConnectedGamepad(GamepadPtr gp) {
                   gp->getModelName().c_str(), properties.vendor_id,
                   properties.product_id, btaddr_str);
     read_btaddress();
-    if (sensor_conf.bt_filter) {
+ /*   if (sensor_conf.bt_filter) {
       Serial.printf("received: %02X:%02X:%02X:%02X:%02X:%02X ", properties.btaddr[0], properties.btaddr[1], properties.btaddr[2], properties.btaddr[3], properties.btaddr[4], properties.btaddr[5]);
       Serial.printf("filtered: %02X:%02X:%02X:%02X:%02X:%02X\r\n", sensor_conf.bt_allow[0], sensor_conf.bt_allow[1],
                     sensor_conf.bt_allow[2], sensor_conf.bt_allow[3],
@@ -586,19 +699,19 @@ void onConnectedGamepad(GamepadPtr gp) {
         Serial.printf("bt_filtered: gamepad not connected\r\n");
       }
 
-    } else {
+    } else { */
       Serial.printf("un_filtered: connected\r\n");
       myGamepads[0] = gp;
       foundEmptySlot = true;
-    }
+    //}
   }
   if (!foundEmptySlot) {
     Serial.println(
       "CALLBACK: Gamepad connected, but could not found empty slot");
   } else {
-    if (is_lms_esp32_version2 == 1) { 
-      byte status=lpf2_sensor->get_status();
-      neopixel_debug->setPixelColor(0, 10-10*status, 10*status, 10);
+    if (is_lms_esp32_version2 == 1) {
+      byte status = lpf2_sensor->get_status();
+      neopixel_debug->setPixelColor(0, 10 - 10 * status, 10 * status, 10);
       neopixel_debug->show();
     }
   }
@@ -611,9 +724,9 @@ void onDisconnectedGamepad(GamepadPtr gp) {
     Serial.printf("CALLBACK: Gamepad is disconnected\r\n");
     myGamepads[0] = nullptr;
     foundGamepad = true;
-    if (is_lms_esp32_version2 == 1) { 
-      byte status=lpf2_sensor->get_status();
-      neopixel_debug->setPixelColor(0, 10-10*status, 10*status, 0);
+    if (is_lms_esp32_version2 == 1) {
+      byte status = lpf2_sensor->get_status();
+      neopixel_debug->setPixelColor(0, 10 - 10 * status, 10 * status, 0);
       neopixel_debug->show();
     }
   }
@@ -675,23 +788,15 @@ void config_sensor() {
     lpf2_sensor = new EV3UARTEmulation(RXD2, TXD2, COLOR_SENSOR, 115200);
     sensor_conf.sensor_id = COLOR_SENSOR;
     lpf2_sensor->create_mode("COLOR\x00\x80\x00\x00\x00\x05\x04", true, DATA16, 8, 2, 0, -100.0f, 100.0f, -100.0f, 100.0f, -100.0f, 100.0f, "PCT", ABSOLUTE, ABSOLUTE);  //map in and map out unit = "XYBD" = x, y, buttons, d-pad
-    lpf2_sensor->create_mode("REFLT", true, DATA16, 8, 3, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "RAW", ABSOLUTE, ABSOLUTE);           //map in and map out unit = "XYBD" = x, y, buttons, d-pad
-   // lpf2_sensor->create_mode("AMBI\x00\x80\x00\x00\x00\x05\x04", true, DATA8, 1, 3, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "XYBD", ABSOLUTE, ABSOLUTE);            //map in and map out unit = "XYBD" = x, y, buttons, d-pad
-   // lpf2_sensor->create_mode("LIGHT\x00\x80\x00\x00\x00\x05\x04", true, DATA8, 3, 3, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "XYBD", ABSOLUTE, ABSOLUTE);           //map in and map out unit = "XYBD" = x, y, buttons, d-pad
-   // lpf2_sensor->create_mode("RREFL\x00\x80\x00\x00\x00\x05\x04", true, DATA8, 2, 4, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "XYBD", ABSOLUTE, ABSOLUTE);           //map in and map out unit = "XYBD" = x, y, buttons, d-pad
-   // lpf2_sensor->create_mode("RGB I\x00\x80\x00\x00\x00\x05\x04", true, DATA16, 4, 4, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "XYBD", ABSOLUTE, ABSOLUTE);          //map in and map out unit = "XYBD" = x, y, buttons, d-pad
-   // lpf2_sensor->create_mode("HSV\x00\x80\x00\x00\x00\x05\x04", true, DATA16, 3, 4, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "XYBD", ABSOLUTE, ABSOLUTE);            //map in and map out unit = "XYBD" = x, y, buttons, d-pad
-   // lpf2_sensor->create_mode("SHSV\x00\x80\x00\x00\x00\x05\x04", true, DATA16, 4, 4, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "XYBD", ABSOLUTE, ABSOLUTE);           //map in and map out unit = "XYBD" = x, y, buttons, d-pad
-    // lpf2_sensor->create_mode("COLOR", true, DATA16, 8, 2, 0, -100.0f, 100.0f, -100.0f, 100.0f, -100.0f, 100.0f, "PCT", ABSOLUTE, ABSOLUTE);  //map in and map out unit = "XYBD" = x, y, buttons, d-pad
-    // lpf2_sensor->create_mode("REFLT", true, DATA16, 8, 3, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "RAW", ABSOLUTE, ABSOLUTE);           //map in and map out unit = "XYBD" = x, y, buttons, d-pad
-    // lpf2_sensor->create_mode("AMBI", true, DATA8, 1, 3, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "XYBD", ABSOLUTE, ABSOLUTE);            //map in and map out unit = "XYBD" = x, y, buttons, d-pad
-    // lpf2_sensor->create_mode("LIGHT", true, DATA8, 3, 3, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "XYBD", ABSOLUTE, ABSOLUTE);           //map in and map out unit = "XYBD" = x, y, buttons, d-pad
-    // lpf2_sensor->create_mode("RREFL", true, DATA8, 2, 4, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "XYBD", ABSOLUTE, ABSOLUTE);           //map in and map out unit = "XYBD" = x, y, buttons, d-pad
-    // lpf2_sensor->create_mode("RGB I", true, DATA16, 4, 4, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "XYBD", ABSOLUTE, ABSOLUTE);          //map in and map out unit = "XYBD" = x, y, buttons, d-pad
-    // lpf2_sensor->create_mode("HSV", true, DATA16, 3, 4, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "XYBD", ABSOLUTE, ABSOLUTE);            //map in and map out unit = "XYBD" = x, y, buttons, d-pad
-    // lpf2_sensor->create_mode("SHSV", true, DATA16, 4, 4, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "XYBD", ABSOLUTE, ABSOLUTE);           //map in and map out unit = "XYBD" = x, y, buttons, d-pad
-    //lpf2_sensor->get_mode(0)->setCallback(pybricks_neopixel_callback);                                                                                                   // attach call back function to mode 0
-    //lpf2_sensor->get_mode(1)->setCallback(pybricks_servo_callback);                                                                                                      // attach call back function to mode 1
+    lpf2_sensor->create_mode("REFLT\x00\x80\x00\x00\x00\x05\x04", true, DATA16, 8, 3, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "RAW", ABSOLUTE, ABSOLUTE);           //map in and map out unit = "XYBD" = x, y, buttons, d-pad
+    lpf2_sensor->create_mode("AMBI\x00\x80\x00\x00\x00\x05\x04", true, DATA8, 1, 3, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "XYBD", ABSOLUTE, ABSOLUTE);            //map in and map out unit = "XYBD" = x, y, buttons, d-pad
+    lpf2_sensor->create_mode("LIGHT\x00\x80\x00\x00\x00\x05\x04", true, DATA8, 3, 3, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "XYBD", ABSOLUTE, ABSOLUTE);           //map in and map out unit = "XYBD" = x, y, buttons, d-pad
+    lpf2_sensor->create_mode("RREFL\x00\x80\x00\x00\x00\x05\x04", true, DATA8, 2, 4, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "XYBD", ABSOLUTE, ABSOLUTE);           //map in and map out unit = "XYBD" = x, y, buttons, d-pad
+    lpf2_sensor->create_mode("RGB I\x00\x80\x00\x00\x00\x05\x04", true, DATA16, 4, 4, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "XYBD", ABSOLUTE, ABSOLUTE);          //map in and map out unit = "XYBD" = x, y, buttons, d-pad
+    lpf2_sensor->create_mode("HSV\x00\x80\x00\x00\x00\x05\x04", true, DATA16, 3, 4, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "XYBD", ABSOLUTE, ABSOLUTE);            //map in and map out unit = "XYBD" = x, y, buttons, d-pad
+    lpf2_sensor->create_mode("SHSV\x00\x80\x00\x00\x00\x05\x04", true, DATA16, 4, 4, 0, 0.0f, 512.0f, 0.0f, 512.0f, 0.0f, 512.0f, "XYBD", ABSOLUTE, ABSOLUTE);           //map in and map out unit = "XYBD" = x, y, buttons, d-pad
+    lpf2_sensor->get_mode(0)->setCallback(pybricks_neopixel_callback);                                                                                                   // attach call back function to mode 0
+    lpf2_sensor->get_mode(1)->setCallback(pybricks_servo_callback);                                                                                                      // attach call back function to mode 1
 
     Serial.printf("LOG: This sensor is configured as Color Sensor\r\n");
   } else {
@@ -727,7 +832,9 @@ void config_sensor() {
     //   Serial.println();
     // }
   }
+
 }
+
 
 
 // Arduino setup function. Runs in CPU 1
@@ -787,6 +894,9 @@ void setup() {
 
   // apply these values to the sensor
   config_sensor();
+  uni_bt_allowlist_set_enabled(sensor_conf.bt_filter==1);
+  add_mac_to_allow_list(sensor_conf.bt_allow);
+  // uni_bt_allowlist_add_addr(sensor_conf.bt_allow);  
 
   ESP32PWM::allocateTimer(0);
   ESP32PWM::allocateTimer(1);
@@ -814,11 +924,11 @@ void setup() {
     }
     Serial.printf("LOG: LMS-ESP32 is connected to the SPIKE3 hub.\r\n");
   } else {
-    Serial.printf("ERROR: Failure connecting LMS-ESP32 to the SPIKE3 hub. Press RESET button on LMS-ESp32.\r\n");
+    Serial.printf("ERROR: Failure connecting LMS-ESP32 to the SPIKE3 hub. Press RESET button on LMS-ESP32.\r\n");
   }
   Serial.println(version);
   Serial.println((String) "Running on " + ESP.getChipModel());
-  Serial.println("Go to https://bluepad.antonsmindstorms.com to configure the LMS-ESp32.\r\n");
+  Serial.println("Go to https://bluepad.antonsmindstorms.com to configure the LMS-ESP32.\r\n");
   delay(200);
   // Setup the Bluepad32 callbacks
   BP32.setup(&onConnectedGamepad, &onDisconnectedGamepad);
@@ -832,7 +942,7 @@ void setup() {
 
 
 
-  Serial.println("LOG: BluePad32 for SPIKEv3, see https://github.com/antonvh/PUPRemote/blob/main/examples/bluepad/spike3/README.md");
+  Serial.println("LOG: BluePad32 for legacy Robot Inventor, SPIKEv2, SPIKEv3, and Pybricks see https://github.com/antonvh/PUPRemote/blob/main/examples/bluepad");
   Serial.printf("LOG: Firmware: %s\r\n", BP32.firmwareVersion());
   const uint8_t *addr = BP32.localBdAddress();
   Serial.printf("LOG: BD Addr: %2X:%2X:%2X:%2X:%2X:%2X\r\n", addr[0], addr[1], addr[2],
@@ -852,15 +962,14 @@ int last_mode = 0;
 
 void loop() {
   byte status = lpf2_sensor->get_status();
-  byte gamepad_connected=0;
+  byte gamepad_connected = 0;
   if ((status != last_status) && (is_lms_esp32_version2 == 1)) {
-    last_status=status;
+    last_status = status;
     GamepadPtr myGamepad = myGamepads[0];
     if (myGamepad && myGamepad->isConnected())
-      gamepad_connected=1;
-      neopixel_debug->setPixelColor(0, 10-10*status, 10*status, 10*gamepad_connected);
-      neopixel_debug->show();
-          
+      gamepad_connected = 1;
+    neopixel_debug->setPixelColor(0, 10 - 10 * status, 10 * status, 10 * gamepad_connected);
+    neopixel_debug->show();
   }
   refresh_BP32++;
   if (refresh_BP32 == 10) {
@@ -884,7 +993,7 @@ void loop() {
     lpf2_sensor->heart_beat();
     int mode = lpf2_sensor->get_current_mode();
     if (mode != last_mode) {
-      Serial.printf("new mode %d\r\n", mode);
+      //Serial.printf("new mode %d\r\n", mode);
       last_mode = mode;
     }
     if ((millis() - last_reading > 20)) {  //} || mode != last_mode) {
@@ -974,8 +1083,8 @@ void loop() {
 
       last_reading = millis();
     }
-    vTaskDelay(10);
+    vTaskDelay(1);
   }
-  vTaskDelay(10);
+  vTaskDelay(1);
   //delay(150);
 }
