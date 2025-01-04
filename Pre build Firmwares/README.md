@@ -2,9 +2,8 @@
 
 ## firmwares
 The following firmwares are available:
-- `firmware_BP32_LPF2_LEGO.bin`: GamePad32 as an emulates LPF2 sensor for official Lego app
-- `firmware_BP32_LPF2_PyBricks.bin`: GamePad32 as an emulated LPF2 sensor for PyBricks
-- `firmware_BP32_UartRemote.bin`: GamePad32 to be used with the UartRemote library with official Lego apps.
+- `firmware_BP32_LPF2_generic_20241231.bin`: GamePad32 as an emulates LPF2 sensor for official Lego app and Pybricks
+- `firmware_BP32_UartRemote_20250104.bin`: GamePad32 to be used with the UartRemote library.
 
 ## using webbrowser
 
