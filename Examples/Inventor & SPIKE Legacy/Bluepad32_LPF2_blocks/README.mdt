@@ -1,0 +1,10 @@
+# Bluepad32 LPF2 for Mindstorms Inventor and SPIKE Prime Legacy Word Blocks
+
+## Template
+
+`bluepad_lms_template.lms` is a temmplate blocks program for reading the x- and y-coordinates of both gamepad joysticks and the buttons that are pressed.
+
+The values are stored ion variabled `lx`, `ly`, `rx`, `ry`, with values between 0 and 255. The buttons and dpad is stored in `button` and `dpad` respectvely, where every button is represented by a single bit. 
+
+## Demo prgram
+The program `bluepad_lms_display/lms` shows two pixel with different intensity on the 5x5 display of the hub. Both pixels can be controlled using the joysticks of the game controller.
