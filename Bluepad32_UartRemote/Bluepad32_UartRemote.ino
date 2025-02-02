@@ -2,13 +2,43 @@
 
 #include "soc/soc.h"
 #include "soc/rtc_cntl_reg.h"
+// Include the ESP-IDF system library for being able to call reset()
+#include <esp_system.h> 
 
 #include <Bluepad32.h>
+// installed version 4.1.0
 
 #include <UartRemote.h>
 #include <Wire.h>
+// Adafruit NeoPixe by Adafruit version 1.12.3
+
 #include <Adafruit_NeoPixel.h>
+// ESP32Servo by Kevin Harrington, John K.Bennett v3.0.6 can be installed via library manager
+
 #include <ESP32Servo.h>
+/*
+patch ESP32PWM.h in <library>/ESP32Servo/ESP32PWM.h:
+change:
+#else
+		if ((pin == 2) || //1
+				(pin == 4) || //1
+				(pin == 5) || //1
+				((pin >= 12) && (pin <= 19)) || //8
+				((pin >= 21) && (pin <= 23)) || //3
+				((pin >= 25) && (pin <= 27)) || //3
+				(pin == 32) || (pin == 33)) //2
+to:
+#else
+		if ((pin == 2) || //1
+				(pin == 4) || //1
+				(pin == 5) || //1
+				((pin >= 12) && (pin <= 20)) || //8
+				((pin >= 21) && (pin <= 23)) || //3
+				((pin >= 25) && (pin <= 27)) || //3
+				(pin == 32) || (pin == 33)) //2
+
+*/
+
 
 #define MAX_GAMEPADS 1
 // storage for gamepads
@@ -24,6 +54,7 @@ byte is_lms_esp32_version2 = 0;  // filled by calling ESP.getChipModel()
 char bt_allow[6] = { 0, 0, 0, 0, 0, 0 };
 bool bt_filter = false;
 int debug = 0;  // global debug; if 1 -> print debug.
+bool systemmode=True; // global for setting systemmode mode in LMS-ESp32v2; systemmode = using NeoPixel on GPIO25 for state of Lego and Bluetooth connection
 
 #define LED_PIN 12
 #define LED_COUNT 64
@@ -107,6 +138,47 @@ void onDisconnectedGamepad(GamepadPtr gp) {
       "CALLBACK: Gamepad disconnected, but not found in myGamepads");
   }
 }
+
+/*
+ur.call("reset()"")
+*/
+
+
+void reset(Arguments args) {
+  Serial.println("Rebooting now...");
+  esp_restart(); // Perform a soft reset
+  uartremote.send_command("resetack", "B", 0);
+}
+
+/*
+ur.set_usermode()
+*/
+void set_usermode() {
+  systemmode=false;
+  uartremote.send_command("set_usermodeack", "B", 0);
+}
+
+/*
+ur.set_systemmode()
+*/
+void set_systemmode() {
+  systemmode=true;
+  uartremote.send_command("set_systemmodeack", "B", 0);
+}
+
+/*
+ur.is_systemmode()
+
+returns 1 when systeemmode otherwise 0
+*/
+void is_systemmode() {
+  if systemmode {
+    uartremote.send_command("is_systemmodeack", "B", 1);
+  } else {
+    uartremote.send_command("is_systemmodeack", "B", 0);
+  }
+}
+
 
 
 /*
@@ -429,6 +501,10 @@ void setup() {
   servo3.attach(servo3Pin, minUs, maxUs);
   servo4.attach(servo4Pin, minUs, maxUs);
   uartremote.add_command("debug", &setdebug);
+  uartremote.add_command("is_systemmode", &is_systemmode);
+  uartremote.add_command("set_usermode", &set_usermode);
+  uartremote.add_command("set_systemmode", &set_systemmode);
+  uartremote.add_command("reset", &reset);
   uartremote.add_command("connected", &connected);
   uartremote.add_command("btaddress", &btaddress);
   uartremote.add_command("btdisconnect", &btdisconnect);
