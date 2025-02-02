@@ -104,4 +104,4 @@ Shows neopixel with current colors.
 ur.call("servo",">BI",servo_nr,servo_pos)
 ```
 
-Turns servo motor `servo_ne` to an angle `serbo_pos`.
+Turns servo motor `servo_nr` to an angle `servo_pos`.
