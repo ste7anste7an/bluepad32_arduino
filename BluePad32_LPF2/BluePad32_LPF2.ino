@@ -99,7 +99,7 @@ int servo4Pin = 25;
 int minUs = 1000;
 int maxUs = 2000;
 
-char version[] = "BluePad32 LPF2 generic version 20241231";
+char version[] = "BluePad32 LPF2 generic version 20250302";
 #include <CmdBuffer.hpp>
 #include <CmdCallback.hpp>
 #include <CmdParser.hpp>
@@ -1009,7 +1009,8 @@ void loop() {
         GamepadPtr myGamepad = myGamepads[0];
         //Serial.print("#");
         if (myGamepad && myGamepad->isConnected()) {
-          if ((last_mode == 0) or (last_mode == 2)) {  // spke3
+          //if ((last_mode == 0) or (last_mode == 2)) {  // spke3
+          if (1) {
             a = (clip((myGamepad->axisX() + 512), 0, 1023) >> 2);
             b = (clip((myGamepad->axisY() + 512), 0, 1023) >> 2);
             if (a > 127) {
