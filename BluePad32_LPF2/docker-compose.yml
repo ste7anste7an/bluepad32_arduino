@@ -1,0 +1,59 @@
+version: "3.9"
+
+services:
+
+  git-sync:
+    image: alpine:3.19
+    container_name: git-sync-bluepad
+    volumes:
+      - bluepad:/data
+
+    command: >
+      sh -c '
+      apk add --no-cache git &&
+      if [ ! -d /data/repo/.git ]; then
+        echo "Cloning repository...";
+        rm -rf /data/repo;
+        git clone --branch main https://github.com/ste7anste7an/bluepad32_arduino.git /data/repo || exit 1;
+      fi;
+      while true; do
+        echo "Updating repository...";
+        cd /data/repo &&
+        git fetch origin main &&
+        git reset --hard FETCH_HEAD &&
+        sleep 300;
+      done
+      '
+    restart: unless-stopped
+    
+  nginx_fw_bluepad:
+    image: nginx:latest
+    container_name: nginx_fw_bluepad
+    restart: always
+    depends_on:
+      - git-sync
+    volumes:
+      - bluepad:/data
+    command: >
+      sh -c "
+      rm -rf /usr/share/nginx/html &&
+      ln -s /data/repo/BluePad32_LPF2/web_configurator /usr/share/nginx/html &&
+      nginx -g 'daemon off;'
+      "
+    networks:
+      - proxy
+    labels:
+        - "traefik.enable=true"
+        - "traefik.docker.network=proxy"
+        - "traefik.http.routers.nginx_fw_bluepad.entrypoints=websecure"
+        - "traefik.http.routers.nginx_fw_bluepad.rule=Host(`bluepad.antonsmindstorms.com`)"
+        - "traefik.http.routers.nginx_fw_bluepad.tls=true"
+        - "traefik.http.middlewares.sslheader.headers.customrequestheaders.X-Forwarded-Proto=https"
+        - "traefik.http.routers.nginx_fw_bluepad.middlewares=sslheader"
+
+networks:
+  proxy:
+    external: true
+
+volumes:
+  bluepad:
