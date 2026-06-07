@@ -13,6 +13,7 @@
     outp=ustruct.unpack('6h',ustruct.pack('12b',*a))
     print(outp)
 */
+
 #include <bitset>
 
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
@@ -43,7 +44,8 @@
 // Adafruit NeoPixe by Adafruit version 1.12.3
 #include <Adafruit_NeoPixel.h>
 // ESP32Servo by Kevin Harrington, John K.Bennett v3.0.6 can be installed via library manager
-#include <ESP32Servo.h>
+// not needed any more
+// #include <ESP32Servo.h>
 /*
 patch ESP32PWM.h in <library>/ESP32Servo/ESP32PWM.h:
 change:
@@ -86,20 +88,28 @@ Adafruit_NeoPixel *neopixel_strip = new Adafruit_NeoPixel(LED_COUNT, LED_PIN);  
 
 byte connected = 0;
 byte last_status = 0;
-Servo servo1;
-Servo servo2;
-Servo servo3;
-Servo servo4;
+// Servo servo1;
+// Servo servo2;
+// Servo servo3;
+// Servo servo4;
+int servoPins[] = {21,22,23,25};
+bool attachedServos[] = {false, false, false, false};
+// int servo1Pin = 21;
+// int servo2Pin = 22;
+// int servo3Pin = 23;
+// int servo4Pin = 25;
 
-int servo1Pin = 21;
-int servo2Pin = 22;
-int servo3Pin = 23;
-int servo4Pin = 25;
+// bool attached_servo1 = false;
+// bool attached_servo2 = false;
+// bool attached_servo3 = false;
+// bool attached_servo4 = false;
+
+// int ch1,ch2,ch3,ch4;
 
 int minUs = 1000;
 int maxUs = 2000;
 
-char version[] = "BluePad32 LPF2 generic version 20250302";
+char version[] = "BluePad32 LPF2 generic version 20260607";
 #include <CmdBuffer.hpp>
 #include <CmdCallback.hpp>
 #include <CmdParser.hpp>
@@ -230,6 +240,33 @@ void pybricks_neopixel_callback(byte buf[], byte s) {
 }
 
 
+// functions for directly controling servo's
+// ledcAttach keeps track of mapping between pwm instance and pin.
+void setServoAngle(int chan, int angle) {
+  int duty = map(angle, 0, 180, 819, 1638);
+  ledcWrite(chan, duty); 
+}
+
+#define FREQ_PWM 50         // 50 Hz
+#define RESOLUTION_PWM 14   // 14 bit resolution
+
+void attachServo(int chan, int pin) {
+  //ledcAttach(pin, FREQ_PWM, RESOLUTION_PWM);
+  ledcSetup(chan, FREQ_PWM, RESOLUTION_PWM);
+  ledcAttachPin(pin, chan);
+}
+
+// Pass the specific PIN you want to shut down
+void stopServo(int pin) {
+  //ledcDetach(pin);            // Disconnect PWM from this specific pin
+  ledcDetachPin(pin);
+  pinMode(pin, OUTPUT);
+  digitalWrite(pin, LOW);     // Force it to 0V
+
+
+  
+}
+
 void pybricks_servo_callback(byte buf[], byte s) {
   byte nr_short = int(s / 2);
   short vals[nr_short];
@@ -238,12 +275,22 @@ void pybricks_servo_callback(byte buf[], byte s) {
     vals[i] = buf[i * 2] + buf[i * 2 + 1] * 256;  // in Block SPIKE language only up to 128 can be used:  vals[i]=buf[i*2]+buf[i*2+1]*128;
     //Serial.printf("vals[%d]=%d\n", i, vals[i]);
   }
+  
+  for (int servoNr = 0; servoNr < 4; servoNr++) {
+    if (vals[servoNr]==1000) {
+      stopServo(servoPins[servoNr]);
+      attachedServos[servoNr] = false;
+    } else {
+      if (!attachedServos[servoNr]) {
+        attachServo(servoNr, servoPins[servoNr]);
+        attachedServos[servoNr] = true;
+      }
+    setServoAngle(servoNr, vals[servoNr]);
+    }
+  }
 
   //Serial.printf("servo %d %d %d %d\n", vals[0], vals[1], vals[2], vals[3]);
-  servo1.write(vals[0]);
-  servo2.write(vals[1]);
-  servo3.write(vals[2]);
-  servo4.write(vals[3]);
+  
 }
 
 
@@ -847,10 +894,12 @@ void setup() {
     is_lms_esp32_version2 = 1;
     RXD2 = 8;
     TXD2 = 7;
-    servo1Pin = 19;
-    servo2Pin = 20;
-    servo3Pin = 21;
-    servo4Pin = 22;
+    // servo1Pin = 19;
+    // servo2Pin = 20;
+    // servo3Pin = 21;
+    // servo4Pin = 22;
+
+    servoPins[0]=19; servoPins[1]=20; servoPins[2]=21; servoPins[3]=22; 
     neopixel_debug->setPixelColor(0, 10, 0, 0);
     neopixel_debug->show();
   } else {
@@ -898,18 +947,24 @@ void setup() {
   add_mac_to_allow_list(sensor_conf.bt_allow);
   // uni_bt_allowlist_add_addr(sensor_conf.bt_allow);  
 
-  ESP32PWM::allocateTimer(0);
-  ESP32PWM::allocateTimer(1);
-  ESP32PWM::allocateTimer(2);
-  ESP32PWM::allocateTimer(3);
-  servo1.setPeriodHertz(50);  // Standard 50hz servo
-  servo2.setPeriodHertz(50);  // Standard 50hz servo
-  servo3.setPeriodHertz(50);  // Standard 50hz servo
-  servo4.setPeriodHertz(50);  // Standard 50hz servo
-  servo1.attach(servo1Pin, minUs, maxUs);
-  servo2.attach(servo2Pin, minUs, maxUs);
-  servo3.attach(servo3Pin, minUs, maxUs);
-  servo4.attach(servo4Pin, minUs, maxUs);
+  // ESP32PWM::allocateTimer(0);
+  // ESP32PWM::allocateTimer(1);
+  // ESP32PWM::allocateTimer(2);
+  // ESP32PWM::allocateTimer(3);
+  // servo1.setPeriodHertz(50);  // Standard 50hz servo
+  // servo2.setPeriodHertz(50);  // Standard 50hz servo
+  // servo3.setPeriodHertz(50);  // Standard 50hz servo
+  // servo4.setPeriodHertz(50);  // Standard 50hz servo
+  // ch1 = servo1.attach(servo1Pin, minUs, maxUs);
+  // ch2 = servo2.attach(servo2Pin, minUs, maxUs);
+  // ch3 = servo3.attach(servo3Pin, minUs, maxUs);
+  // ch4 = servo4.attach(servo4Pin, minUs, maxUs);
+
+  // do not attach at startup
+  // for (int servoNr = 0; servoNr < 4; servoNr++) {
+  //     attachServo(servoNr, servoPins[servoNr]);
+  //     attachedServos[servoNr] = true;
+  // }
   // sensor.get_mode(1)->setCallback(servo_callback);  // attach call back function to mode 1
   // //sensor.get_mode(2)->setCallback(i2c_callback);  // attach call back function to mode 1
 
