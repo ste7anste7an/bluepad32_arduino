@@ -1,3 +1,6 @@
+## THIS LIBRARY IS UNMAINTAINED. FOR ACTUAL VERSION GO HERE:
+# https://github.com/AntonsMindstorms/uRemote/blob/main/library/bluepad_ur.py
+
 __author__ = "Anton Vanhoucke & Ste7an"
 __copyright__ = "Copyright 2023-2026, AntonsMindstorms.com"
 __license__ = "GPL"
