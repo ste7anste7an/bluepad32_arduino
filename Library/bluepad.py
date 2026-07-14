@@ -1,3 +1,6 @@
+# THIS IS AN UNMAINTAINED LIBRARY. GO HERE FOR LATEST:
+# https://github.com/AntonsMindstorms/PUPRemote/blob/main/src/bluepad.py
+
 __author__ = "Anton Vanhoucke & Ste7an"
 __copyright__ = "Copyright 2023, AntonsMindstorms.com"
 __license__ = "GPL"
