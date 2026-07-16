@@ -374,6 +374,7 @@ bool uRemote::writeFrame(uint8_t status,
   }
 
   _stream->write(frame, p);
+  _stream->flush();
   _lastError = "";
   return true;
 }

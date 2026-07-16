@@ -707,9 +707,9 @@ void setup() {
   BP32.setup(&onConnectedGamepad, &onDisconnectedGamepad);
 
   Serial.println("BluePad32 uRemote ready");
-  Serial.printf("UART: RX=%u TX=%u baud=%lu\n", RXD2, TXD2, (unsigned long)UREMOTE_BAUD);
-  Serial.printf("BP32 firmware: %s\n", BP32.firmwareVersion());
-  Serial.printf("I2C: SDA=%u SCL=%u\n", I2C_SDA_PIN, I2C_SCL_PIN);
+  Serial.printf("UART: RX=%u TX=%u baud=%lu\r\n", RXD2, TXD2, (unsigned long)UREMOTE_BAUD);
+  Serial.printf("BP32 firmware: %s\r\n", BP32.firmwareVersion());
+  Serial.printf("I2C: SDA=%u SCL=%u\r\n", I2C_SDA_PIN, I2C_SCL_PIN);
 }
 
 void loop() {
