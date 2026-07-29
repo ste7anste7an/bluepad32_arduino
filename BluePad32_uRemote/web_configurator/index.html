@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#15324b">
+    <meta name="description" content="BluePad32 Bluetooth, NeoPixel, servo, and I2C configurator">
+    <title>BluePad32 Configurator</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC"
+      crossorigin="anonymous"
+    >
+    <link rel="stylesheet" href="style.css">
+    <script src="script.js" defer></script>
+  </head>
+  <body>
+    <div class="container-xl p-3">
+      <header class="d-flex align-items-center gap-2 pb-2 mb-3 border-bottom">
+        <img
+          class="header-image is-logo-image"
+          src="logo.svg"
+          width="40"
+          height="40"
+          alt="Antons Mindstorms"
+        >
+        <h1 class="fs-4 mt-1">BluePad32 Configurator</h1>
+      </header>
+
+      <main>
+      <p class="col-md-8">
+        Configure and test Bluetooth, NeoPixels, servos, and I²C devices over USB.
+      </p>
+
+      <section class="panel card card-body mb-3 connect-panel" aria-labelledby="connection-title">
+        <div>
+          <h2 id="connection-title">USB connection</h2>
+          <p id="supportMessage" class="text-muted">Connect the board, then choose its serial port.</p>
+        </div>
+        <div class="actions">
+          <button id="connectButton" class="btn btn-primary px-4">Connect</button>
+          <button id="refreshButton" class="btn btn-outline-primary" disabled>Refresh</button>
+        </div>
+        <div id="connectionState" class="state alert alert-warning" role="status">Not connected</div>
+      </section>
+
+      <section class="status-grid" aria-label="Board status">
+        <article class="status-card card card-body">
+          <span>Controller</span>
+          <strong id="controllerState">Unknown</strong>
+        </article>
+        <article class="status-card card card-body">
+          <span>Connected controller MAC</span>
+          <strong id="connectedMac">--:--:--:--:--:--</strong>
+        </article>
+        <article class="status-card card card-body">
+          <span>Allow-list entries</span>
+          <strong id="allowListCount">—</strong>
+        </article>
+        <article class="status-card card card-body">
+          <span>NeoPixel count</span>
+          <strong id="currentPixelCount">—</strong>
+        </article>
+        <article class="status-card card card-body">
+          <span>NeoPixel GPIO</span>
+          <strong id="currentPixelGpio">—</strong>
+        </article>
+      </section>
+
+      <section class="panel card card-body mb-3" aria-labelledby="settings-title">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Stored settings</p>
+            <h2 id="settings-title">Allow-list configuration</h2>
+          </div>
+          <button id="useConnectedButton" class="btn btn-outline-primary" disabled>Use connected MAC</button>
+        </div>
+
+        <label for="allowedMac">Allowed controller MAC address</label>
+        <input
+          id="allowedMac"
+          type="text"
+          inputmode="text"
+          autocomplete="off"
+          spellcheck="false"
+          maxlength="17"
+          placeholder="AA:BB:CC:DD:EE:FF"
+          class="form-control"
+          disabled
+        >
+        <p id="macError" class="field-error" aria-live="polite"></p>
+
+        <div class="switch-row">
+          <div>
+            <label for="filterEnabled">Enable Bluetooth allow-list filter</label>
+            <p>Only an address in the allow list may connect.</p>
+          </div>
+          <input id="filterEnabled" class="form-check-input" type="checkbox" role="switch" disabled>
+        </div>
+
+        <div class="switch-row">
+          <div>
+            <label for="allowNewEnabled">Allow new Bluetooth connections</label>
+            <p>Runtime setting; it returns to enabled after a restart.</p>
+          </div>
+          <input id="allowNewEnabled" class="form-check-input" type="checkbox" role="switch" disabled>
+        </div>
+
+        <div class="actions separated">
+          <button id="applyButton" class="btn btn-primary" disabled>Apply and save</button>
+          <button id="clearButton" class="btn btn-outline-danger" disabled>Clear allow list</button>
+          <button id="forgetButton" class="btn btn-outline-primary" disabled>Forget paired controllers</button>
+        </div>
+      </section>
+
+      <section class="panel card card-body mb-3" aria-labelledby="list-title">
+        <h2 id="list-title">Active allow list</h2>
+        <ul id="allowList" class="mac-list">
+          <li class="text-muted">Connect and refresh to read the list.</li>
+        </ul>
+      </section>
+
+      <section class="panel card card-body mb-3" aria-labelledby="neopixel-title">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Runtime settings</p>
+            <h2 id="neopixel-title">NeoPixel configuration</h2>
+          </div>
+        </div>
+        <p class="text-muted">
+          These values take effect immediately and return to their firmware defaults after a restart.
+        </p>
+        <div class="number-grid">
+          <div>
+            <label for="pixelCount">Number of NeoPixels</label>
+            <input id="pixelCount" class="form-control" type="number" min="1" max="64" step="1" disabled>
+          </div>
+          <div>
+            <label for="pixelGpio">NeoPixel GPIO pin</label>
+            <input id="pixelGpio" class="form-control" type="number" min="0" max="39" step="1" disabled>
+          </div>
+        </div>
+        <p id="neopixelError" class="field-error" aria-live="polite"></p>
+        <div class="actions">
+          <button id="applyNeopixelButton" class="btn btn-primary" disabled>Apply NeoPixel settings</button>
+        </div>
+        <div class="subpanel">
+          <h3>Test NeoPixels</h3>
+          <div class="test-grid">
+            <div>
+              <label for="pixelIndex">Pixel index</label>
+              <input id="pixelIndex" class="form-control" type="number" min="0" max="63" step="1" value="0" disabled>
+            </div>
+            <div>
+              <label for="pixelColor">Color</label>
+              <input id="pixelColor" class="form-control form-control-color" type="color" value="#00aaff" disabled>
+            </div>
+          </div>
+          <p id="pixelTestError" class="field-error" aria-live="polite"></p>
+          <div class="actions">
+            <button id="setPixelButton" class="btn btn-outline-primary" disabled>Set selected pixel</button>
+            <button id="fillPixelsButton" class="btn btn-outline-primary" disabled>Fill strip</button>
+            <button id="clearPixelsButton" class="btn btn-outline-primary" disabled>Clear strip</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel card card-body mb-3" aria-labelledby="servo-title">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Four channels</p>
+            <h2 id="servo-title">Servo test</h2>
+          </div>
+          <button id="servoOffAllButton" class="btn btn-outline-primary" disabled>Detach all</button>
+        </div>
+        <p class="text-muted">Set an angle from 0° to 180°. Detach stops driving that servo output.</p>
+        <div class="servo-grid">
+          <div class="servo-row">
+            <label for="servo0">Servo 1</label>
+            <input id="servo0" class="form-control" type="number" min="0" max="180" step="1" value="90" disabled>
+            <button class="servo-set btn btn-outline-primary" data-servo="0" disabled>Set</button>
+            <button class="servo-off btn btn-outline-primary" data-servo="0" disabled>Detach</button>
+            <span id="servoState0" class="value-state">Detached</span>
+          </div>
+          <div class="servo-row">
+            <label for="servo1">Servo 2</label>
+            <input id="servo1" class="form-control" type="number" min="0" max="180" step="1" value="90" disabled>
+            <button class="servo-set btn btn-outline-primary" data-servo="1" disabled>Set</button>
+            <button class="servo-off btn btn-outline-primary" data-servo="1" disabled>Detach</button>
+            <span id="servoState1" class="value-state">Detached</span>
+          </div>
+          <div class="servo-row">
+            <label for="servo2">Servo 3</label>
+            <input id="servo2" class="form-control" type="number" min="0" max="180" step="1" value="90" disabled>
+            <button class="servo-set btn btn-outline-primary" data-servo="2" disabled>Set</button>
+            <button class="servo-off btn btn-outline-primary" data-servo="2" disabled>Detach</button>
+            <span id="servoState2" class="value-state">Detached</span>
+          </div>
+          <div class="servo-row">
+            <label for="servo3">Servo 4</label>
+            <input id="servo3" class="form-control" type="number" min="0" max="180" step="1" value="90" disabled>
+            <button class="servo-set btn btn-outline-primary" data-servo="3" disabled>Set</button>
+            <button class="servo-off btn btn-outline-primary" data-servo="3" disabled>Detach</button>
+            <span id="servoState3" class="value-state">Detached</span>
+          </div>
+        </div>
+        <p id="servoError" class="field-error" aria-live="polite"></p>
+      </section>
+
+      <section class="panel card card-body mb-3" aria-labelledby="i2c-title">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Bus tools</p>
+            <h2 id="i2c-title">I²C commands</h2>
+          </div>
+          <button id="i2cScanButton" class="btn btn-outline-primary" disabled>Scan bus</button>
+        </div>
+        <p class="text-muted">Bus pins: SDA GPIO 5, SCL GPIO 4.</p>
+        <div class="number-grid compact-grid">
+          <div>
+            <label for="i2cAddress">Device address</label>
+            <input id="i2cAddress" class="form-control" type="text" value="0x68" placeholder="0x68" disabled>
+            <small>Decimal or 0x-prefixed hexadecimal</small>
+          </div>
+          <div>
+            <label for="i2cRegister">Register (decimal)</label>
+            <input id="i2cRegister" class="form-control" type="number" min="0" max="255" step="1" value="0" disabled>
+          </div>
+          <div>
+            <label for="i2cLength">Read length</label>
+            <input id="i2cLength" class="form-control" type="number" min="1" max="128" step="1" value="1" disabled>
+          </div>
+        </div>
+
+        <div class="actions separated">
+          <button id="i2cReadButton" class="btn btn-outline-primary" disabled>Read bytes</button>
+          <button id="i2cReadRegButton" class="btn btn-primary" disabled>Read register</button>
+        </div>
+
+        <div class="subpanel">
+          <label for="i2cWriteData">Write data (hex bytes)</label>
+          <input
+            id="i2cWriteData"
+            type="text"
+            value="00"
+            placeholder="01 A0 FF"
+            autocomplete="off"
+            spellcheck="false"
+            class="form-control"
+            disabled
+          >
+          <p class="text-muted field-hint">Separate bytes with spaces or commas. Registers remain decimal.</p>
+          <div class="actions">
+            <button id="i2cWriteButton" class="btn btn-outline-primary" disabled>Write bytes</button>
+            <button id="i2cWriteRegButton" class="btn btn-primary" disabled>Write register</button>
+          </div>
+        </div>
+        <p id="i2cError" class="field-error" aria-live="polite"></p>
+        <label for="i2cOutput">I²C output (hex bytes)</label>
+        <pre id="i2cOutput" class="hex-output" aria-live="polite">No I²C operation yet.</pre>
+      </section>
+
+      <details class="panel card card-body mb-3 log-panel">
+        <summary>Connection log</summary>
+        <pre id="log" aria-live="polite"></pre>
+        <button id="clearLogButton" class="btn btn-outline-primary">Clear log</button>
+      </details>
+      </main>
+    </div>
+  </body>
+</html>

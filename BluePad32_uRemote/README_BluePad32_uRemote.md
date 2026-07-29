@@ -10,6 +10,7 @@ The color-sensor packet commands, matrix packet commands, matrix cell mapping, L
 - `BluePad32_uRemote.ino` - Arduino sketch for the ESP32/LMS-ESP32 BluePad32 board.
 - `uRemote.h` / `uRemote.cpp` - copied from the supplied Arduino uRemote library for convenience. `UREMOTE_MAX_ARG_LEN` is set to 128 so I2C scans and larger I2C byte transfers fit in one reply.
 - `Pybricks_BtAllowList.py` - Pybricks example showing joystick reads and Bluetooth allow-list setup.
+- `web_configurator/` - Bluetooth and NeoPixel Web Serial configurator for the USB connection.
 
 ## UART
 
@@ -95,6 +96,55 @@ Commands:
 - `save()` - save Bluetooth settings to EEPROM.
 - `load()` - reload Bluetooth settings from EEPROM and apply them.
 - `defaults()` - reset Bluetooth settings in RAM to defaults. Call `save()` afterward to persist the reset.
+
+## USB Serial configuration and test commands
+
+The standard USB `Serial` port runs at 115200 baud and accepts commands
+terminated by CR or LF. Commands are case-insensitive and use the same
+`GET BT_*` / `SET BT_*` form as `BluePad32_LPF2.ino`.
+
+- `GET BT_MAC` - connected gamepad address.
+- `GET BT_CON` - gamepad connection state.
+- `GET BT_ALLOW` - configured allowed address.
+- `GET BT_FILTER` - allow-list filter state.
+- `GET BT_ALLOW_LIST` - active allow-list entries.
+- `GET BT_IN_ALLOW_LIST b0 b1 b2 b3 b4 b5` - test an address.
+- `GET BT_ALLOW_NEW` - whether new Bluetooth connections are accepted.
+- `SET BT_ALLOW b0 b1 b2 b3 b4 b5` - replace the allowed address.
+- `SET BT_FILTER 0|1` - disable or enable filtering.
+- `SET BT_CLEAR_ALLOW_LIST` - clear the allowed address and active list.
+- `SET BT_FORGET` - forget paired controller keys.
+- `SET BT_ALLOW_NEW 0|1` - reject or accept new Bluetooth connections.
+- `GET NP_NR` - read the current NeoPixel count.
+- `GET NP_GPIO` - read the current NeoPixel GPIO pin.
+- `SET NP_NR 1..64` - change the NeoPixel count for the current runtime.
+- `SET NP_GPIO 0..39` - change the NeoPixel GPIO pin for the current runtime.
+- `NEOPIXEL SET index r g b` - set and show one configured pixel.
+- `NEOPIXEL FILL r g b` - fill and show the complete strip.
+- `NEOPIXEL CLEAR` - clear and show the complete strip.
+- `GET SERVO` - report all four angles; `-1` means detached.
+- `SERVO SET index angle` - set servo index 0..3 to 0..180 degrees.
+- `SERVO OFF index|ALL` - detach one or all servo outputs.
+- `I2C SCAN` - scan the bus and print addresses as hexadecimal bytes.
+- `I2C READ address length` - read raw bytes.
+- `I2C READ_REG address register length` - read bytes from a register.
+- `I2C WRITE address hex_byte ...` - write raw hexadecimal bytes.
+- `I2C WRITE_REG address register hex_byte ...` - write hexadecimal bytes to a register.
+- `SAVE` - persist the allowed address and filter state to EEPROM.
+- `HELP` - print the USB command list.
+
+I2C register values are decimal. I2C device addresses may be decimal or
+`0x`-prefixed hexadecimal, and write data and returned data are hexadecimal
+bytes.
+
+The BluePad32 Configurator is in `web_configurator/`. Serve the repository root
+so the shared LPF2 logo is available:
+
+```text
+python -m http.server 8000
+```
+
+Open `http://localhost:8000/BluePad32_uRemote/web_configurator/` in Chrome or Edge.
 
 ## Pybricks example: gamepad, IMU, I2C scan, and Bluetooth allow list
 

@@ -1,0 +1,198 @@
+/* Bootstrap 5.0.2 is shared with the LPF2 configurator.
+   Only layouts unique to this configurator are defined here. */
+
+.connect-panel {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 12px 24px;
+}
+
+.state {
+  grid-column: 1 / -1;
+  margin-bottom: 0;
+}
+
+.status-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 14px;
+  margin-bottom: 1rem;
+}
+
+.status-card:nth-child(1),
+.status-card:nth-child(3),
+.status-card:nth-child(4),
+.status-card:nth-child(5) {
+  grid-column: span 1;
+}
+
+.status-card:nth-child(2) {
+  grid-column: span 2;
+}
+
+.status-card {
+  min-width: 0;
+}
+
+.status-card span {
+  display: block;
+  margin-bottom: 7px;
+  color: #6c757d;
+  font-size: .78rem;
+}
+
+.status-card strong {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.eyebrow {
+  margin-bottom: 6px;
+  color: #0d6efd;
+  font-size: .75rem;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.number-grid,
+.test-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 18px;
+}
+
+.number-grid.compact-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.subpanel {
+  margin-top: 22px;
+  padding: 1rem;
+  border: 1px solid #dee2e6;
+  border-radius: .25rem;
+  background: #f8f9fa;
+}
+
+.field-error {
+  min-height: 20px;
+  margin: 6px 0 8px;
+  color: #dc3545;
+  font-size: .85rem;
+}
+
+.field-hint,
+.value-state,
+small {
+  color: #6c757d;
+  font-size: .85rem;
+}
+
+small {
+  display: block;
+  margin-top: 6px;
+}
+
+.switch-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 17px 0;
+  border-top: 1px solid #dee2e6;
+}
+
+.switch-row label,
+.switch-row p {
+  margin-bottom: 3px;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.actions.separated {
+  margin-top: 10px;
+  padding-top: 18px;
+  border-top: 1px solid #dee2e6;
+}
+
+.servo-grid {
+  margin-top: 18px;
+  border-top: 1px solid #dee2e6;
+}
+
+.servo-row {
+  display: grid;
+  grid-template-columns: minmax(75px, .7fr) minmax(85px, 1fr) auto auto minmax(80px, .8fr);
+  align-items: center;
+  gap: 10px;
+  padding: 13px 0;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.servo-row label {
+  margin: 0;
+}
+
+.hex-output,
+#log {
+  min-height: 84px;
+  padding: 14px;
+  overflow: auto;
+  border-radius: .25rem;
+  color: #fff;
+  background: #212529;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  white-space: pre-wrap;
+}
+
+#log {
+  max-height: 260px;
+}
+
+.log-panel summary {
+  margin-bottom: 1rem;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+@media (max-width: 650px) {
+  .connect-panel,
+  .status-grid,
+  .number-grid,
+  .number-grid.compact-grid,
+  .test-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .state,
+  .status-card:nth-child(n) {
+    grid-column: auto;
+  }
+
+  .section-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .servo-row {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .servo-row label,
+  .servo-row .value-state {
+    grid-column: span 2;
+  }
+}

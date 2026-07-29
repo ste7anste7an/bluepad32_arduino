@@ -68,6 +68,7 @@ uint8_t is_lms_esp32_version2 = 0;
 
 int servoPins[] = { 21, 22, 23, 25 };
 bool attachedServos[] = { false, false, false, false };
+int servoAngles[] = { -1, -1, -1, -1 };
 
 uint8_t neopixel_gpio = DEFAULT_LED_PIN;
 uint8_t neopixel_nrleds = DEFAULT_LED_COUNT;
@@ -80,6 +81,11 @@ struct BtConfig {
 
 BtConfig bt_conf;
 byte current_bt_mac[6] = { 0, 0, 0, 0, 0, 0 };
+bool bt_allow_new = true;
+
+static const uint8_t SERIAL_COMMAND_MAX = 127;
+char serialCommand[SERIAL_COMMAND_MAX + 1];
+uint8_t serialCommandLength = 0;
 
 Adafruit_NeoPixel *leds = new Adafruit_NeoPixel(DEFAULT_LED_COUNT,
                                                 DEFAULT_LED_PIN,
@@ -238,6 +244,432 @@ void applyBtConfig() {
   setBtFilter(bt_conf.bt_filter);
 }
 
+/* ================= USB SERIAL CONFIG COMMANDS ================= */
+
+void printBtMac(const char *name, const byte mac[6]) {
+  Serial.printf("%s: %u %u %u %u %u %u\r\n", name,
+                mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+}
+
+bool parseByteValue(const String &text, byte &value) {
+  if (text.length() == 0) return false;
+  char *end = nullptr;
+  long parsed = strtol(text.c_str(), &end, 0);
+  if (*end != '\0' || parsed < 0 || parsed > 255) return false;
+  value = (byte)parsed;
+  return true;
+}
+
+bool parseHexByte(const String &text, byte &value) {
+  String hex = text;
+  if (hex.startsWith("0X")) hex.remove(0, 2);
+  if (hex.length() < 1 || hex.length() > 2) return false;
+  for (uint8_t i = 0; i < hex.length(); i++) {
+    if (!isxdigit((unsigned char)hex.charAt(i))) return false;
+  }
+  value = (byte)strtoul(hex.c_str(), nullptr, 16);
+  return true;
+}
+
+bool parseDecimalByte(const String &text, byte &value) {
+  if (text.length() == 0) return false;
+  for (uint8_t i = 0; i < text.length(); i++) {
+    if (!isdigit((unsigned char)text.charAt(i))) return false;
+  }
+  unsigned long parsed = strtoul(text.c_str(), nullptr, 10);
+  if (parsed > 255) return false;
+  value = (byte)parsed;
+  return true;
+}
+
+void printHexBytes(const char *name, const uint8_t *data, uint8_t length) {
+  Serial.printf("%s:", name);
+  for (uint8_t i = 0; i < length; i++) {
+    Serial.printf(" %02X", data[i]);
+  }
+  Serial.println();
+}
+
+uint8_t splitCommand(const String &line, String tokens[], uint8_t maxTokens) {
+  uint8_t count = 0;
+  int pos = 0;
+  while (pos < (int)line.length() && count < maxTokens) {
+    while (pos < (int)line.length() && isspace((unsigned char)line.charAt(pos))) pos++;
+    if (pos >= (int)line.length()) break;
+    int start = pos;
+    while (pos < (int)line.length() && !isspace((unsigned char)line.charAt(pos))) pos++;
+    tokens[count++] = line.substring(start, pos);
+  }
+  return count;
+}
+
+void printSerialHelp() {
+  Serial.println("Configuration commands (case-insensitive):");
+  Serial.println("GET BT_MAC");
+  Serial.println("GET BT_CON");
+  Serial.println("GET BT_ALLOW");
+  Serial.println("GET BT_FILTER");
+  Serial.println("GET BT_ALLOW_LIST");
+  Serial.println("GET BT_IN_ALLOW_LIST <b0> <b1> <b2> <b3> <b4> <b5>");
+  Serial.println("GET BT_ALLOW_NEW");
+  Serial.println("SET BT_ALLOW <b0> <b1> <b2> <b3> <b4> <b5>");
+  Serial.println("SET BT_FILTER <0|1>");
+  Serial.println("SET BT_CLEAR_ALLOW_LIST");
+  Serial.println("SET BT_FORGET");
+  Serial.println("SET BT_ALLOW_NEW <0|1>");
+  Serial.println("GET NP_NR");
+  Serial.println("GET NP_GPIO");
+  Serial.println("SET NP_NR <1..64>");
+  Serial.println("SET NP_GPIO <0..39>");
+  Serial.println("NEOPIXEL SET <index> <r> <g> <b>");
+  Serial.println("NEOPIXEL FILL <r> <g> <b>");
+  Serial.println("NEOPIXEL CLEAR");
+  Serial.println("GET SERVO");
+  Serial.println("SERVO SET <0..3> <0..180>");
+  Serial.println("SERVO OFF [0..3|ALL]");
+  Serial.println("I2C SCAN");
+  Serial.println("I2C READ <address> <length>");
+  Serial.println("I2C READ_REG <address> <decimal_register> <length>");
+  Serial.println("I2C WRITE <address> <hex_byte> [...]");
+  Serial.println("I2C WRITE_REG <address> <decimal_register> <hex_byte> [...]");
+  Serial.println("SAVE");
+  Serial.println("OK");
+}
+
+void handleSerialGet(const String tokens[], uint8_t count) {
+  if (count < 2) {
+    Serial.println("ERROR: GET needs a BT_*, NP_*, or SERVO command");
+    return;
+  }
+
+  if (tokens[1] == "BT_MAC") {
+    readBtAddress();
+    printBtMac("bt_mac", current_bt_mac);
+  } else if (tokens[1] == "BT_CON") {
+    Serial.printf("bt_con: %u\r\n", gamepadConnected() ? 1 : 0);
+  } else if (tokens[1] == "BT_ALLOW") {
+    printBtMac("bt_allow", bt_conf.bt_allow);
+  } else if (tokens[1] == "BT_FILTER") {
+    Serial.printf("bt_filter: %u\r\n", bt_conf.bt_filter ? 1 : 0);
+  } else if (tokens[1] == "BT_ALLOW_NEW") {
+    Serial.printf("bt_allow_new: %u\r\n", bt_allow_new ? 1 : 0);
+  } else if (tokens[1] == "BT_ALLOW_LIST") {
+    const bd_addr_t *addresses;
+    int addressCount = 0;
+    uni_bt_allowlist_get_all(&addresses, &addressCount);
+    Serial.println("allowed mac addresses:");
+    Serial.printf("nr=%d\r\n", addressCount);
+    Serial.printf("bt_allow_list_count: %d\r\n", addressCount);
+    for (int i = 0; i < addressCount; i++) {
+      Serial.printf("%02X:%02X:%02X:%02X:%02X:%02X\r\n",
+                    addresses[i][0], addresses[i][1], addresses[i][2],
+                    addresses[i][3], addresses[i][4], addresses[i][5]);
+      Serial.printf("bt_allow_list: %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+                    addresses[i][0], addresses[i][1], addresses[i][2],
+                    addresses[i][3], addresses[i][4], addresses[i][5]);
+    }
+  } else if (tokens[1] == "BT_IN_ALLOW_LIST") {
+    if (count != 8) {
+      Serial.println("ERROR: GET BT_IN_ALLOW_LIST needs 6 byte values");
+      return;
+    }
+    byte mac[6];
+    for (uint8_t i = 0; i < 6; i++) {
+      if (!parseByteValue(tokens[i + 2], mac[i])) {
+        Serial.println("ERROR: Bluetooth address bytes must be 0..255");
+        return;
+      }
+    }
+    bool allowed = uni_bt_allowlist_is_allowed_addr(mac);
+    if (allowed) {
+      Serial.printf("%02X:%02X:%02X:%02X:%02X:%02X is in allow list\r\n",
+                    mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+    }
+    Serial.printf("bt_in_allow_list: %u\r\n", allowed ? 1 : 0);
+  } else if (tokens[1] == "NP_NR") {
+    Serial.printf("neopixel_nrleds: %u\r\n", neopixel_nrleds);
+  } else if (tokens[1] == "NP_GPIO") {
+    Serial.printf("neopixel_gpio: %u\r\n", neopixel_gpio);
+  } else if (tokens[1] == "SERVO") {
+    Serial.printf("servo_angles: %d %d %d %d\r\n",
+                  servoAngles[0], servoAngles[1], servoAngles[2], servoAngles[3]);
+  } else {
+    Serial.println("ERROR: unknown GET command");
+    return;
+  }
+  Serial.println("OK");
+}
+
+void handleSerialSet(const String tokens[], uint8_t count) {
+  if (count < 2) {
+    Serial.println("ERROR: SET needs a BT_* or NP_* command");
+    return;
+  }
+
+  if (tokens[1] == "BT_ALLOW") {
+    if (count != 8) {
+      Serial.println("ERROR: SET BT_ALLOW needs 6 byte values");
+      return;
+    }
+    byte mac[6];
+    for (uint8_t i = 0; i < 6; i++) {
+      if (!parseByteValue(tokens[i + 2], mac[i])) {
+        Serial.println("ERROR: Bluetooth address bytes must be 0..255");
+        return;
+      }
+    }
+    memcpy(bt_conf.bt_allow, mac, 6);
+    addMacToAllowList(bt_conf.bt_allow);
+    printBtMac("bt_allow", bt_conf.bt_allow);
+  } else if (tokens[1] == "BT_FILTER") {
+    byte enabled;
+    if (count != 3 || !parseByteValue(tokens[2], enabled) || enabled > 1) {
+      Serial.println("ERROR: SET BT_FILTER needs 0 or 1");
+      return;
+    }
+    setBtFilter(enabled == 1);
+    Serial.printf("bt_filter: %u\r\n", bt_conf.bt_filter ? 1 : 0);
+  } else if (tokens[1] == "BT_CLEAR_ALLOW_LIST") {
+    memset(bt_conf.bt_allow, 0, 6);
+    uni_bt_allowlist_remove_all();
+    Serial.println("allowlist removed");
+    Serial.println("bt_allow_list_count: 0");
+  } else if (tokens[1] == "BT_FORGET") {
+    BP32.forgetBluetoothKeys();
+    Serial.println("bt_forget: 1");
+  } else if (tokens[1] == "BT_ALLOW_NEW") {
+    byte enabled;
+    if (count != 3 || !parseByteValue(tokens[2], enabled) || enabled > 1) {
+      Serial.println("ERROR: SET BT_ALLOW_NEW needs 0 or 1");
+      return;
+    }
+    bt_allow_new = enabled == 1;
+    BP32.enableNewBluetoothConnections(bt_allow_new);
+    Serial.printf("bt_allow_new: %u\r\n", bt_allow_new ? 1 : 0);
+  } else if (tokens[1] == "NP_NR") {
+    byte countValue;
+    if (count != 3 || !parseByteValue(tokens[2], countValue) ||
+        countValue < 1 || countValue > 64) {
+      Serial.println("ERROR: SET NP_NR needs a value from 1 to 64");
+      return;
+    }
+    rebuildNeoPixels(countValue, neopixel_gpio);
+    Serial.printf("neopixel_nrleds: %u\r\n", neopixel_nrleds);
+  } else if (tokens[1] == "NP_GPIO") {
+    byte gpio;
+    if (count != 3 || !parseByteValue(tokens[2], gpio) || gpio > 39) {
+      Serial.println("ERROR: SET NP_GPIO needs a value from 0 to 39");
+      return;
+    }
+    rebuildNeoPixels(neopixel_nrleds, gpio);
+    Serial.printf("neopixel_gpio: %u\r\n", neopixel_gpio);
+  } else {
+    Serial.println("ERROR: unknown SET command");
+    return;
+  }
+  Serial.println("OK");
+}
+
+void handleSerialNeopixel(const String tokens[], uint8_t count) {
+  if (count < 2) {
+    Serial.println("ERROR: NEOPIXEL needs SET, FILL, or CLEAR");
+    return;
+  }
+
+  if (tokens[1] == "CLEAR") {
+    leds->clear();
+    leds->show();
+  } else if (tokens[1] == "FILL") {
+    byte r, g, b;
+    if (count != 5 || !parseByteValue(tokens[2], r) ||
+        !parseByteValue(tokens[3], g) || !parseByteValue(tokens[4], b)) {
+      Serial.println("ERROR: NEOPIXEL FILL needs r g b values from 0 to 255");
+      return;
+    }
+    for (uint16_t i = 0; i < leds->numPixels(); i++) {
+      leds->setPixelColor(i, r, g, b);
+    }
+    leds->show();
+  } else if (tokens[1] == "SET") {
+    byte index, r, g, b;
+    if (count != 6 || !parseByteValue(tokens[2], index) ||
+        !parseByteValue(tokens[3], r) || !parseByteValue(tokens[4], g) ||
+        !parseByteValue(tokens[5], b)) {
+      Serial.println("ERROR: NEOPIXEL SET needs index r g b");
+      return;
+    }
+    if (index >= leds->numPixels()) {
+      Serial.println("ERROR: NeoPixel index is outside the configured strip");
+      return;
+    }
+    leds->setPixelColor(index, r, g, b);
+    leds->show();
+  } else {
+    Serial.println("ERROR: unknown NEOPIXEL command");
+    return;
+  }
+  Serial.println("OK");
+}
+
+void handleSerialServo(const String tokens[], uint8_t count) {
+  if (count < 2) {
+    Serial.println("ERROR: SERVO needs SET or OFF");
+    return;
+  }
+
+  if (tokens[1] == "SET") {
+    byte index;
+    byte angle;
+    if (count != 4 || !parseByteValue(tokens[2], index) || index > 3 ||
+        !parseByteValue(tokens[3], angle) || angle > 180) {
+      Serial.println("ERROR: SERVO SET needs index 0..3 and angle 0..180");
+      return;
+    }
+    setServo(index, angle);
+    Serial.printf("servo_%u: %u\r\n", index, angle);
+  } else if (tokens[1] == "OFF") {
+    if (count == 2 || (count == 3 && tokens[2] == "ALL")) {
+      stopAllServos();
+    } else {
+      byte index;
+      if (count != 3 || !parseByteValue(tokens[2], index) || index > 3) {
+        Serial.println("ERROR: SERVO OFF needs an index from 0 to 3 or ALL");
+        return;
+      }
+      setServo(index, 1000);
+    }
+  } else {
+    Serial.println("ERROR: unknown SERVO command");
+    return;
+  }
+  Serial.printf("servo_angles: %d %d %d %d\r\n",
+                servoAngles[0], servoAngles[1], servoAngles[2], servoAngles[3]);
+  Serial.println("OK");
+}
+
+void handleSerialI2C(const String tokens[], uint8_t count) {
+  if (count < 2) {
+    Serial.println("ERROR: I2C needs SCAN, READ, READ_REG, WRITE, or WRITE_REG");
+    return;
+  }
+
+  if (tokens[1] == "SCAN") {
+    uint8_t addresses[127];
+    uint8_t found = scanI2C(addresses);
+    Serial.printf("i2c_scan_count: %u\r\n", found);
+    printHexBytes("i2c_addresses", addresses, found);
+    Serial.println("OK");
+    return;
+  }
+
+  byte address;
+  if (count < 3 || !parseByteValue(tokens[2], address) || address > 127) {
+    Serial.println("ERROR: I2C address must be a decimal or 0x-prefixed value from 0 to 127");
+    return;
+  }
+
+  if (tokens[1] == "READ") {
+    byte length;
+    if (count != 4 || !parseDecimalByte(tokens[3], length) ||
+        length < 1 || length > I2C_MAX_BYTES) {
+      Serial.println("ERROR: I2C READ length must be 1..128");
+      return;
+    }
+    uint8_t data[I2C_MAX_BYTES];
+    uint8_t received = readI2CBytes(address, data, length);
+    Serial.printf("i2c_received: %u\r\n", received);
+    printHexBytes("i2c_data", data, received);
+  } else if (tokens[1] == "READ_REG") {
+    byte reg;
+    byte length;
+    if (count != 5 || !parseDecimalByte(tokens[3], reg) ||
+        !parseDecimalByte(tokens[4], length) || length < 1 ||
+        length > I2C_MAX_BYTES) {
+      Serial.println("ERROR: I2C READ_REG needs decimal register 0..255 and length 1..128");
+      return;
+    }
+    uint8_t data[I2C_MAX_BYTES];
+    uint8_t received = readI2CRegBytes(address, reg, data, length);
+    Serial.printf("i2c_received: %u\r\n", received);
+    printHexBytes("i2c_data", data, received);
+  } else if (tokens[1] == "WRITE" || tokens[1] == "WRITE_REG") {
+    bool withRegister = tokens[1] == "WRITE_REG";
+    uint8_t dataStart = withRegister ? 4 : 3;
+    byte reg = 0;
+    if (withRegister && (count < 5 || !parseDecimalByte(tokens[3], reg))) {
+      Serial.println("ERROR: I2C WRITE_REG needs a decimal register from 0 to 255");
+      return;
+    }
+    if (count <= dataStart) {
+      Serial.println("ERROR: I2C write needs at least one hexadecimal data byte");
+      return;
+    }
+    uint8_t data[I2C_MAX_BYTES];
+    uint8_t length = count - dataStart;
+    for (uint8_t i = 0; i < length; i++) {
+      if (!parseHexByte(tokens[dataStart + i], data[i])) {
+        Serial.println("ERROR: I2C data bytes must be hexadecimal values such as 00 or FF");
+        return;
+      }
+    }
+    uint8_t error = withRegister
+                      ? writeI2CRegBytes(address, reg, data, length)
+                      : writeI2CBytes(address, data, length);
+    Serial.printf("i2c_error: %u\r\n", error);
+    Serial.printf("i2c_written: %u\r\n", length);
+  } else {
+    Serial.println("ERROR: unknown I2C command");
+    return;
+  }
+  Serial.println("OK");
+}
+
+void handleSerialCommand(String line) {
+  line.trim();
+  if (line.length() == 0) return;
+
+  String tokens[40];
+  uint8_t count = splitCommand(line, tokens, 40);
+  for (uint8_t i = 0; i < count; i++) tokens[i].toUpperCase();
+
+  if (tokens[0] == "GET") {
+    handleSerialGet(tokens, count);
+  } else if (tokens[0] == "SET") {
+    handleSerialSet(tokens, count);
+  } else if (tokens[0] == "NEOPIXEL") {
+    handleSerialNeopixel(tokens, count);
+  } else if (tokens[0] == "SERVO") {
+    handleSerialServo(tokens, count);
+  } else if (tokens[0] == "I2C") {
+    handleSerialI2C(tokens, count);
+  } else if (tokens[0] == "SAVE") {
+    saveBtConfig();
+    Serial.println("OK");
+  } else if (tokens[0] == "HELP") {
+    printSerialHelp();
+  } else {
+    Serial.println("ERROR: supported commands are GET, SET, NEOPIXEL, SERVO, I2C, SAVE, HELP");
+  }
+}
+
+void processSerialCommands() {
+  while (Serial.available()) {
+    char c = (char)Serial.read();
+    if (c == '\r' || c == '\n') {
+      if (serialCommandLength > 0) {
+        serialCommand[serialCommandLength] = '\0';
+        handleSerialCommand(String(serialCommand));
+        serialCommandLength = 0;
+      }
+    } else if (serialCommandLength < SERIAL_COMMAND_MAX) {
+      serialCommand[serialCommandLength++] = c;
+    } else {
+      serialCommandLength = 0;
+      Serial.println("ERROR: command is too long");
+    }
+  }
+}
+
 /* ================= I2C HELPERS ================= */
 
 uint8_t scanI2C(uint8_t addresses[]) {
@@ -334,6 +766,7 @@ bool setServo(uint8_t servoNr, int angle) {
   if (angle == 1000) {
     stopServoPin(servoPins[servoNr]);
     attachedServos[servoNr] = false;
+    servoAngles[servoNr] = -1;
     return true;
   }
 
@@ -342,6 +775,7 @@ bool setServo(uint8_t servoNr, int angle) {
     attachedServos[servoNr] = true;
   }
   setServoAngle(servoNr, angle);
+  servoAngles[servoNr] = angle;
   return true;
 }
 
@@ -349,6 +783,7 @@ void stopAllServos() {
   for (uint8_t i = 0; i < 4; i++) {
     stopServoPin(servoPins[i]);
     attachedServos[i] = false;
+    servoAngles[i] = -1;
   }
 }
 
@@ -537,8 +972,7 @@ void handleRemote(const String &cmd,
         response.setError("servo index must be 0..3");
         return;
       }
-      stopServoPin(servoPins[n]);
-      attachedServos[n] = false;
+      setServo(n, 1000);
     } else {
       stopAllServos();
     }
@@ -711,6 +1145,7 @@ void setup() {
   remote.begin(Serial2, handleRemote);
 
   BP32.setup(&onConnectedGamepad, &onDisconnectedGamepad);
+  BP32.enableNewBluetoothConnections(bt_allow_new);
 
   Serial.println("BluePad32 uRemote V1.0 ready");
   Serial.printf("UART: RX=%u TX=%u baud=%lu\r\n", RXD2, TXD2, (unsigned long)UREMOTE_BAUD);
@@ -721,5 +1156,6 @@ void setup() {
 void loop() {
   BP32.update();
   remote.process();
+  processSerialCommands();
   delay(1);
 }
