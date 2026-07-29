@@ -1,6 +1,8 @@
 /*
   BluePad32_uRemote.ino
 
+  Version 1.0
+
   uRemote conversion of BluePad32_LPF2.ino.
 
   This sketch removes the LPF2 mode emulation layer and exposes the gamepad,
@@ -450,9 +452,13 @@ void handleRemote(const String &cmd,
     uint8_t r = args[1];
     uint8_t g = args[2];
     uint8_t b = args[3];
+    bool show_pixel = true;
+    if (argc==5) {
+      show_pixel = args[4];
+    }
     if (n < leds->numPixels()) {
       leds->setPixelColor(n, r, g, b);
-      leds->show();
+      if (show_pixel) leds->show();
     }
     response.add(1);
     return;
@@ -706,7 +712,7 @@ void setup() {
 
   BP32.setup(&onConnectedGamepad, &onDisconnectedGamepad);
 
-  Serial.println("BluePad32 uRemote ready");
+  Serial.println("BluePad32 uRemote V1.0 ready");
   Serial.printf("UART: RX=%u TX=%u baud=%lu\r\n", RXD2, TXD2, (unsigned long)UREMOTE_BAUD);
   Serial.printf("BP32 firmware: %s\r\n", BP32.firmwareVersion());
   Serial.printf("I2C: SDA=%u SCL=%u\r\n", I2C_SDA_PIN, I2C_SCL_PIN);
