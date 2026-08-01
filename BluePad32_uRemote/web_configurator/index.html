@@ -55,8 +55,8 @@
           <strong id="connectedMac">--:--:--:--:--:--</strong>
         </article>
         <article class="status-card card card-body">
-          <span>Allow-list entries</span>
-          <strong id="allowListCount">—</strong>
+          <span>Allowed controller MAC</span>
+          <strong id="allowedMacStatus">—</strong>
         </article>
         <article class="status-card card card-body">
           <span>NeoPixel count</span>
@@ -72,7 +72,7 @@
         <div class="section-heading">
           <div>
             <p class="eyebrow">Stored settings</p>
-            <h2 id="settings-title">Allow-list configuration</h2>
+            <h2 id="settings-title">Allowed controller</h2>
           </div>
           <button id="useConnectedButton" class="btn btn-outline-primary" disabled>Use connected MAC</button>
         </div>
@@ -93,8 +93,8 @@
 
         <div class="switch-row">
           <div>
-            <label for="filterEnabled">Enable Bluetooth allow-list filter</label>
-            <p>Only an address in the allow list may connect.</p>
+            <label for="filterEnabled">Only allow this controller</label>
+            <p>When enabled, only the single controller address above may connect.</p>
           </div>
           <input id="filterEnabled" class="form-check-input" type="checkbox" role="switch" disabled>
         </div>
@@ -109,16 +109,8 @@
 
         <div class="actions separated">
           <button id="applyButton" class="btn btn-primary" disabled>Apply and save</button>
-          <button id="clearButton" class="btn btn-outline-danger" disabled>Clear allow list</button>
-          <button id="forgetButton" class="btn btn-outline-primary" disabled>Forget paired controllers</button>
+          <button id="clearButton" class="btn btn-outline-danger" disabled>Clear allowed address</button>
         </div>
-      </section>
-
-      <section class="panel card card-body mb-3" aria-labelledby="list-title">
-        <h2 id="list-title">Active allow list</h2>
-        <ul id="allowList" class="mac-list">
-          <li class="text-muted">Connect and refresh to read the list.</li>
-        </ul>
       </section>
 
       <section class="panel card card-body mb-3" aria-labelledby="neopixel-title">

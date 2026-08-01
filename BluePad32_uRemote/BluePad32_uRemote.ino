@@ -1,7 +1,7 @@
 /*
   BluePad32_uRemote.ino
 
-  Version 1.0
+  Version 1.1
 
   uRemote conversion of BluePad32_LPF2.ino.
 
@@ -290,6 +290,14 @@ void printHexBytes(const char *name, const uint8_t *data, uint8_t length) {
   Serial.println();
 }
 
+void printHexAddresses(const char *name, const uint8_t *addresses, uint8_t length) {
+  Serial.printf("%s:", name);
+  for (uint8_t i = 0; i < length; i++) {
+    Serial.printf(" 0x%02X", addresses[i]);
+  }
+  Serial.println();
+}
+
 uint8_t splitCommand(const String &line, String tokens[], uint8_t maxTokens) {
   uint8_t count = 0;
   int pos = 0;
@@ -557,7 +565,7 @@ void handleSerialI2C(const String tokens[], uint8_t count) {
     uint8_t addresses[127];
     uint8_t found = scanI2C(addresses);
     Serial.printf("i2c_scan_count: %u\r\n", found);
-    printHexBytes("i2c_addresses", addresses, found);
+    printHexAddresses("i2c_addresses", addresses, found);
     Serial.println("OK");
     return;
   }

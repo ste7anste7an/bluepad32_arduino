@@ -7,7 +7,7 @@ const ui = {
   support: document.querySelector("#supportMessage"),
   controllerState: document.querySelector("#controllerState"),
   connectedMac: document.querySelector("#connectedMac"),
-  allowListCount: document.querySelector("#allowListCount"),
+  allowedMacStatus: document.querySelector("#allowedMacStatus"),
   currentPixelCount: document.querySelector("#currentPixelCount"),
   currentPixelGpio: document.querySelector("#currentPixelGpio"),
   allowedMac: document.querySelector("#allowedMac"),
@@ -16,8 +16,6 @@ const ui = {
   useConnected: document.querySelector("#useConnectedButton"),
   apply: document.querySelector("#applyButton"),
   clear: document.querySelector("#clearButton"),
-  forget: document.querySelector("#forgetButton"),
-  allowList: document.querySelector("#allowList"),
   pixelCount: document.querySelector("#pixelCount"),
   pixelGpio: document.querySelector("#pixelGpio"),
   applyNeopixel: document.querySelector("#applyNeopixelButton"),
@@ -56,7 +54,6 @@ let writer;
 let readTask;
 let receiveBuffer = "";
 let connectedMac = "";
-let allowListEntries = [];
 let i2cPending = false;
 const encoder = new TextEncoder();
 
@@ -66,7 +63,7 @@ function setConnected(connected) {
   ui.state.className = `state alert ${connected ? "alert-success" : "alert-warning"}`;
   [
     ui.refresh, ui.allowedMac, ui.filter, ui.allowNew, ui.apply,
-    ui.clear, ui.forget, ui.pixelCount, ui.pixelGpio, ui.applyNeopixel,
+    ui.clear, ui.pixelCount, ui.pixelGpio, ui.applyNeopixel,
     ui.pixelIndex, ui.pixelColor, ui.setPixel, ui.fillPixels, ui.clearPixels,
     ui.servoOffAll, ...ui.servoInputs, ...ui.servoSetButtons, ...ui.servoOffButtons,
     ui.i2cAddress, ui.i2cRegister, ui.i2cLength, ui.i2cWriteData,
@@ -94,6 +91,15 @@ function macToBytes(value) {
 
 function bytesToMac(numbers) {
   return numbers.map((value) => value.toString(16).padStart(2, "0")).join(":").toUpperCase();
+}
+
+function formatI2cAddresses(value) {
+  const addresses = value.trim().split(/\s+/).filter(Boolean);
+  if (addresses.length === 0) return "(none)";
+  return addresses.map((address) => {
+    const hex = address.replace(/^0x/i, "").toUpperCase();
+    return `0x${hex.padStart(2, "0")}`;
+  }).join(", ");
 }
 
 function colorBytes(value) {
@@ -156,33 +162,14 @@ async function send(command) {
 }
 
 async function refreshSettings() {
-  allowListEntries = [];
-  renderAllowList();
   await send("GET BT_CON");
   await send("GET BT_MAC");
   await send("GET BT_ALLOW");
   await send("GET BT_FILTER");
   await send("GET BT_ALLOW_NEW");
-  await send("GET BT_ALLOW_LIST");
   await send("GET NP_NR");
   await send("GET NP_GPIO");
   await send("GET SERVO");
-}
-
-function renderAllowList() {
-  ui.allowList.replaceChildren();
-  if (allowListEntries.length === 0) {
-    const item = document.createElement("li");
-    item.className = "text-muted";
-    item.textContent = "The active allow list is empty.";
-    ui.allowList.append(item);
-    return;
-  }
-  allowListEntries.forEach((mac) => {
-    const item = document.createElement("li");
-    item.textContent = mac;
-    ui.allowList.append(item);
-  });
 }
 
 function parseLine(rawLine) {
@@ -209,26 +196,18 @@ function parseLine(rawLine) {
   }
 
   match = line.match(/^bt_allow:\s*((?:\d+\s+){5}\d+)$/i);
-  if (match) ui.allowedMac.value = bytesToMac(match[1].trim().split(/\s+/).map(Number));
+  if (match) {
+    const allowedMac = bytesToMac(match[1].trim().split(/\s+/).map(Number));
+    const hasAllowedMac = !isZeroMac(allowedMac);
+    ui.allowedMac.value = hasAllowedMac ? allowedMac : "";
+    ui.allowedMacStatus.textContent = hasAllowedMac ? allowedMac : "None";
+  }
 
   match = line.match(/^bt_filter:\s*([01])$/i);
   if (match) ui.filter.checked = match[1] === "1";
 
   match = line.match(/^bt_allow_new:\s*([01])$/i);
   if (match) ui.allowNew.checked = match[1] === "1";
-
-  match = line.match(/^bt_allow_list_count:\s*(\d+)$/i);
-  if (match) {
-    ui.allowListCount.textContent = match[1];
-    allowListEntries = [];
-    renderAllowList();
-  }
-
-  match = line.match(/^bt_allow_list:\s*([0-9a-f:]{17})$/i);
-  if (match) {
-    allowListEntries.push(match[1].toUpperCase());
-    renderAllowList();
-  }
 
   match = line.match(/^neopixel_nrleds:\s*(\d+)$/i);
   if (match) {
@@ -254,7 +233,7 @@ function parseLine(rawLine) {
   if (match) appendI2cOutput(`Found: ${match[1]} device(s)`);
 
   match = line.match(/^i2c_addresses:\s*(.*)$/i);
-  if (match) appendI2cOutput(`Addresses: ${match[1].trim() || "(none)"}`);
+  if (match) appendI2cOutput(`Addresses (hex): ${formatI2cAddresses(match[1])}`);
 
   match = line.match(/^i2c_received:\s*(\d+)$/i);
   if (match) appendI2cOutput(`Received: ${match[1]} byte(s)`);
@@ -365,16 +344,10 @@ async function applyAndSave() {
 }
 
 async function clearAllowList() {
-  if (!window.confirm("Clear the Bluetooth allow list and save the empty list?")) return;
+  if (!window.confirm("Clear the allowed Bluetooth controller address?")) return;
   await send("SET BT_FILTER 0");
   await send("SET BT_CLEAR_ALLOW_LIST");
   await send("SAVE");
-  await refreshSettings();
-}
-
-async function forgetControllers() {
-  if (!window.confirm("Forget all paired Bluetooth controllers? They will need to pair again.")) return;
-  await send("SET BT_FORGET");
   await refreshSettings();
 }
 
@@ -453,7 +426,6 @@ ui.connect.addEventListener("click", toggleConnection);
 ui.refresh.addEventListener("click", () => refreshSettings().catch((error) => appendLog(error.message)));
 ui.apply.addEventListener("click", () => applyAndSave().catch((error) => appendLog(error.message)));
 ui.clear.addEventListener("click", () => clearAllowList().catch((error) => appendLog(error.message)));
-ui.forget.addEventListener("click", () => forgetControllers().catch((error) => appendLog(error.message)));
 ui.applyNeopixel.addEventListener("click", () => applyNeopixelSettings().catch((error) => appendLog(error.message)));
 ui.setPixel.addEventListener("click", () => setSelectedPixel(false).catch((error) => appendLog(error.message)));
 ui.fillPixels.addEventListener("click", () => setSelectedPixel(true).catch((error) => appendLog(error.message)));
