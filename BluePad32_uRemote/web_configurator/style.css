@@ -75,6 +75,12 @@
   gap: 10px;
 }
 
+.dashboard-load-hint {
+  flex-basis: 100%;
+  margin: 0;
+  text-align: right;
+}
+
 #gamepadDashboardContent {
   margin-top: 20px;
 }
@@ -471,6 +477,10 @@ small {
 
   .dashboard-toggle {
     justify-content: flex-start;
+  }
+
+  .dashboard-load-hint {
+    text-align: left;
   }
 
   .servo-row {

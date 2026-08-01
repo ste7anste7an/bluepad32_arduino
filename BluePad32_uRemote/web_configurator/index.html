@@ -77,10 +77,11 @@
           </div>
           <div class="dashboard-toggle">
             <div class="form-check form-switch">
-              <input id="gamepadDashboardEnabled" class="form-check-input" type="checkbox" role="switch">
-              <label class="form-check-label" for="gamepadDashboardEnabled">Enable dashboard</label>
+              <input id="gamepadDashboardEnabled" class="form-check-input" type="checkbox" role="switch" aria-controls="gamepadDashboardContent" aria-expanded="false">
+              <label class="form-check-label" for="gamepadDashboardEnabled">Enable gamepad visuals</label>
             </div>
-            <span id="gamepadLiveState" class="live-state">Dashboard off</span>
+            <span id="gamepadLiveState" class="live-state">Disabled — no polling</span>
+            <small class="dashboard-load-hint">Off by default. Enabling starts continuous serial polling.</small>
           </div>
         </div>
 

@@ -1174,7 +1174,7 @@ void setup() {
   BP32.setup(&onConnectedGamepad, &onDisconnectedGamepad);
   BP32.enableNewBluetoothConnections(bt_allow_new);
 
-  Serial.println("BluePad32 uRemote V1.0 ready");
+  Serial.println("BluePad32 uRemote V1.1 ready");
   Serial.printf("UART: RX=%u TX=%u baud=%lu\r\n", RXD2, TXD2, (unsigned long)UREMOTE_BAUD);
   Serial.printf("BP32 firmware: %s\r\n", BP32.firmwareVersion());
   Serial.printf("I2C: SDA=%u SCL=%u\r\n", I2C_SDA_PIN, I2C_SCL_PIN);

@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#101b2b">
+    <meta name="description" content="Live pitch, roll, and relative heading visualizer for a BluePad32 gamepad">
+    <title>BluePad32 Gamepad Attitude</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="script.js" defer></script>
+  </head>
+  <body>
+    <main class="page-shell">
+      <header class="page-header">
+        <div>
+          <p class="eyebrow">BluePad32 · IMU fusion</p>
+          <h1>Gamepad attitude</h1>
+          <p class="subtitle">Gyroscope integration corrected by the accelerometer.</p>
+        </div>
+        <div id="connectionState" class="status-badge">Disconnected</div>
+      </header>
+
+      <section class="panel connection-panel" aria-labelledby="connection-title">
+        <div>
+          <h2 id="connection-title">USB connection</h2>
+          <p id="supportMessage">Connect the ESP32 over Web Serial, then keep the controller still during calibration.</p>
+        </div>
+        <div class="button-row">
+          <button id="connectButton" class="button primary" type="button">Connect</button>
+          <button id="calibrateButton" class="button" type="button" disabled>Calibrate while still</button>
+          <button id="zeroButton" class="button" type="button" disabled>Zero heading</button>
+        </div>
+      </section>
+
+      <section class="angle-grid" aria-label="Calculated orientation angles">
+        <article class="angle-card roll-card">
+          <span>Roll</span>
+          <strong id="rollValue">0.0°</strong>
+        </article>
+        <article class="angle-card pitch-card">
+          <span>Pitch</span>
+          <strong id="pitchValue">0.0°</strong>
+        </article>
+        <article class="angle-card heading-card">
+          <span>Heading</span>
+          <strong id="headingValue">0.0°</strong>
+          <small>Relative to the last zero</small>
+        </article>
+      </section>
+
+      <section class="visual-grid">
+        <article class="panel visual-panel" aria-labelledby="attitude-title">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Gravity reference</p>
+              <h2 id="attitude-title">Pitch &amp; roll</h2>
+            </div>
+          </div>
+          <div class="attitude-instrument" aria-label="Pitch and roll attitude indicator">
+            <div id="attitudePlane" class="attitude-plane">
+              <div class="sky"></div>
+              <div class="ground"></div>
+              <div class="horizon-line"></div>
+            </div>
+            <div class="pitch-mark pitch-mark-up">+30</div>
+            <div class="pitch-mark pitch-mark-center">0</div>
+            <div class="pitch-mark pitch-mark-down">−30</div>
+            <div class="fixed-wings"><span></span></div>
+          </div>
+        </article>
+
+        <article class="panel visual-panel" aria-labelledby="heading-title">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Gyro-integrated</p>
+              <h2 id="heading-title">Relative heading</h2>
+            </div>
+          </div>
+          <div class="compass" aria-label="Relative heading compass">
+            <div class="heading-pointer"></div>
+            <div id="compassRose" class="compass-rose">
+              <span class="north">N</span>
+              <span class="east">E</span>
+              <span class="south">S</span>
+              <span class="west">W</span>
+              <div class="compass-ticks"></div>
+            </div>
+            <div class="compass-center"></div>
+          </div>
+        </article>
+      </section>
+
+      <section class="panel filter-panel" aria-labelledby="filter-title">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">Complementary filter</p>
+            <h2 id="filter-title">Sensor weighting</h2>
+          </div>
+          <output id="gyroWeightOutput" for="gyroWeight">98% gyro · 2% accelerometer</output>
+        </div>
+        <label for="gyroWeight">Gyroscope weight</label>
+        <input id="gyroWeight" type="range" min="0" max="100" step="1" value="98">
+        <div class="range-labels"><span>Accelerometer correction</span><span>Gyroscope response</span></div>
+
+        <div class="calibration-grid">
+          <label for="gyroScale">
+            Raw gyro units per °/s
+            <input id="gyroScale" type="number" min="1" step="1" value="65536">
+          </label>
+          <div class="calibration-status">
+            <span>Gyro bias</span>
+            <strong id="biasValue">0, 0, 0</strong>
+          </div>
+          <div class="calibration-status">
+            <span>Sample interval</span>
+            <strong id="sampleInterval">—</strong>
+          </div>
+        </div>
+        <p class="note">
+          Roll and pitch are corrected toward the gravity vector. Heading is relative and can drift because gamepads do not provide a magnetometer through this interface.
+        </p>
+      </section>
+
+      <section class="panel raw-panel" aria-labelledby="raw-title">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">Live sample</p>
+            <h2 id="raw-title">Raw IMU values</h2>
+          </div>
+          <span id="sampleState" class="sample-state">Waiting for connection</span>
+        </div>
+        <div class="raw-grid">
+          <div><span>Gyro X</span><strong id="gyroX">0</strong></div>
+          <div><span>Gyro Y</span><strong id="gyroY">0</strong></div>
+          <div><span>Gyro Z</span><strong id="gyroZ">0</strong></div>
+          <div><span>Accel X</span><strong id="accelX">0</strong></div>
+          <div><span>Accel Y</span><strong id="accelY">0</strong></div>
+          <div><span>Accel Z</span><strong id="accelZ">0</strong></div>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

@@ -100,7 +100,7 @@ function setConnected(connected) {
     if (ui.gamepadDashboardEnabled.checked) {
       updateGamepadVisuals([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], false);
     }
-    ui.gamepadLiveState.textContent = ui.gamepadDashboardEnabled.checked ? "Connect to start" : "Dashboard off";
+    ui.gamepadLiveState.textContent = ui.gamepadDashboardEnabled.checked ? "Connect to start" : "Disabled — no polling";
     ui.gamepadLiveState.classList.remove("is-live");
   }
 }
@@ -285,10 +285,11 @@ function stopGamepadPolling() {
 
 function setGamepadDashboardEnabled(enabled) {
   ui.gamepadDashboardEnabled.checked = enabled;
+  ui.gamepadDashboardEnabled.setAttribute("aria-expanded", enabled ? "true" : "false");
   ui.gamepadDashboardContent.hidden = !enabled;
   if (!enabled) {
     stopGamepadPolling();
-    ui.gamepadLiveState.textContent = "Dashboard off";
+    ui.gamepadLiveState.textContent = "Disabled — no polling";
     ui.gamepadLiveState.classList.remove("is-live");
     return;
   }
