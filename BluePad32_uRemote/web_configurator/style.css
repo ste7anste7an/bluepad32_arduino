@@ -54,6 +54,286 @@
   gap: 18px;
 }
 
+.bluetooth-dashboard-stack {
+  display: flex;
+  flex-direction: column;
+}
+
+.allowed-controller-dashboard {
+  order: 1;
+}
+
+.gamepad-dashboard {
+  order: 2;
+}
+
+.dashboard-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+#gamepadDashboardContent {
+  margin-top: 20px;
+}
+
+.live-state {
+  padding: .35rem .65rem;
+  border-radius: 999px;
+  color: #495057;
+  background: #e9ecef;
+  font-size: .82rem;
+  font-weight: 600;
+}
+
+.live-state.is-live {
+  color: #0f5132;
+  background: #d1e7dd;
+}
+
+.gamepad-readout-grid {
+  display: grid;
+  grid-template-columns: minmax(300px, .9fr) minmax(400px, 1.1fr);
+  gap: 24px;
+}
+
+.gamepad-controls,
+.joystick-panel,
+.sensor-chart {
+  padding: 1rem;
+  border: 1px solid #dee2e6;
+  border-radius: .5rem;
+  background: #f8f9fa;
+}
+
+.gamepad-controls h3,
+.joystick-panel h3,
+.sensor-chart h3 {
+  margin-bottom: 14px;
+  font-size: 1rem;
+}
+
+.shoulder-row,
+.system-row,
+.stick-button-row {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+.shoulder-row {
+  margin-bottom: 18px;
+}
+
+.system-row {
+  flex-wrap: wrap;
+  margin-top: 18px;
+}
+
+.stick-button-row {
+  margin-top: 8px;
+}
+
+.pad-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 52px;
+  min-height: 52px;
+  border: 2px solid #87919b;
+  color: #495057;
+  background: #fff;
+  font-size: .9rem;
+  font-weight: 700;
+  transition: color 60ms linear, background-color 60ms linear, border-color 60ms linear, box-shadow 60ms linear;
+}
+
+.pad-button.pressed {
+  border-color: #0d6efd;
+  color: #fff;
+  background: #0d6efd;
+  box-shadow: 0 0 0 4px rgb(13 110 253 / 18%);
+}
+
+.pad-button.shoulder {
+  min-width: 72px;
+  min-height: 40px;
+  border-radius: .4rem;
+}
+
+.pad-button.small-button {
+  min-width: 64px;
+  min-height: 36px;
+  padding: 0 11px;
+  border-radius: 999px;
+  font-size: .76rem;
+}
+
+.controller-button-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  gap: 30px;
+  min-height: 150px;
+}
+
+.dpad,
+.face-buttons {
+  display: grid;
+  grid-template-columns: repeat(3, 52px);
+  grid-template-rows: repeat(3, 52px);
+  justify-content: center;
+}
+
+.dpad .pad-button {
+  border-radius: .2rem;
+}
+
+.dpad-up,
+.face-y {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.dpad-left,
+.face-x {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.dpad-center {
+  grid-column: 2;
+  grid-row: 2;
+  border-color: #87919b;
+  border-radius: 0 !important;
+  background: #87919b;
+}
+
+.dpad-right,
+.face-b {
+  grid-column: 3;
+  grid-row: 2;
+}
+
+.dpad-down,
+.face-a {
+  grid-column: 2;
+  grid-row: 3;
+}
+
+.face-buttons .pad-button {
+  border-radius: 50%;
+}
+
+.joystick-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.joystick-grid figure {
+  margin: 0;
+  text-align: center;
+}
+
+.joystick-grid figcaption {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 6px;
+  color: #495057;
+  font-size: .82rem;
+  font-weight: 600;
+}
+
+.joystick-grid figcaption span {
+  color: #6c757d;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-weight: 400;
+}
+
+.joystick-grid figcaption strong {
+  margin-right: auto;
+}
+
+.joystick-grid figcaption b {
+  display: inline-block;
+  min-width: 34px;
+  font-weight: 500;
+  text-align: right;
+}
+
+.joystick-canvas,
+.sensor-canvas {
+  display: block;
+  width: 100%;
+  border-radius: .35rem;
+  background: #fff;
+}
+
+.joystick-canvas {
+  max-width: 240px;
+  margin: 0 auto;
+  aspect-ratio: 1;
+}
+
+.sensor-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  margin-top: 18px;
+}
+
+.chart-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.chart-heading h3 {
+  margin-bottom: 6px;
+}
+
+.chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: .75rem;
+  font-weight: 700;
+}
+
+.chart-legend strong {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-weight: 500;
+}
+
+.axis-x { color: #dc3545; }
+.axis-y { color: #198754; }
+.axis-z { color: #0d6efd; }
+
+.chart-scale-controls {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  white-space: nowrap;
+}
+
+.chart-scale-controls span {
+  min-width: 58px;
+  color: #495057;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: .74rem;
+  text-align: center;
+}
+
+.sensor-canvas {
+  height: 220px;
+}
+
 .eyebrow {
   margin-bottom: 6px;
   color: #0d6efd;
@@ -173,7 +453,9 @@ small {
   .status-grid,
   .number-grid,
   .number-grid.compact-grid,
-  .test-grid {
+  .test-grid,
+  .gamepad-readout-grid,
+  .sensor-grid {
     grid-template-columns: 1fr;
   }
 
@@ -187,6 +469,10 @@ small {
     flex-direction: column;
   }
 
+  .dashboard-toggle {
+    justify-content: flex-start;
+  }
+
   .servo-row {
     grid-template-columns: 1fr 1fr;
   }
@@ -194,5 +480,19 @@ small {
   .servo-row label,
   .servo-row .value-state {
     grid-column: span 2;
+  }
+
+  .controller-button-layout {
+    gap: 12px;
+  }
+
+  .joystick-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 430px) {
+  .chart-heading {
+    flex-direction: column;
   }
 }

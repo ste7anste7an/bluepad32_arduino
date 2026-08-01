@@ -68,7 +68,125 @@
         </article>
       </section>
 
-      <section class="panel card card-body mb-3" aria-labelledby="settings-title">
+      <div class="bluetooth-dashboard-stack">
+      <section id="gamepadDashboard" class="panel card card-body mb-3 gamepad-dashboard" aria-labelledby="gamepad-title">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Live readout</p>
+            <h2 id="gamepad-title">BluePad gamepad</h2>
+          </div>
+          <div class="dashboard-toggle">
+            <div class="form-check form-switch">
+              <input id="gamepadDashboardEnabled" class="form-check-input" type="checkbox" role="switch">
+              <label class="form-check-label" for="gamepadDashboardEnabled">Enable dashboard</label>
+            </div>
+            <span id="gamepadLiveState" class="live-state">Dashboard off</span>
+          </div>
+        </div>
+
+        <div id="gamepadDashboardContent" hidden>
+        <div class="gamepad-readout-grid">
+          <div class="gamepad-controls" aria-label="Gamepad button states">
+            <h3>Buttons</h3>
+            <div class="shoulder-row">
+              <span class="pad-button shoulder" data-button-bit="64">L2</span>
+              <span class="pad-button shoulder" data-button-bit="16">L1</span>
+              <span class="pad-button shoulder" data-button-bit="32">R1</span>
+              <span class="pad-button shoulder" data-button-bit="128">R2</span>
+            </div>
+            <div class="controller-button-layout">
+              <div class="dpad" aria-label="D-pad">
+                <span class="pad-button dpad-up" data-dpad-bit="1">▲</span>
+                <span class="pad-button dpad-left" data-dpad-bit="8">◀</span>
+                <span class="pad-button dpad-center" aria-hidden="true"></span>
+                <span class="pad-button dpad-right" data-dpad-bit="4">▶</span>
+                <span class="pad-button dpad-down" data-dpad-bit="2">▼</span>
+              </div>
+              <div class="face-buttons" aria-label="Face buttons">
+                <span class="pad-button face-y" data-button-bit="8" aria-label="North face button"></span>
+                <span class="pad-button face-x" data-button-bit="4" aria-label="West face button"></span>
+                <span class="pad-button face-b" data-button-bit="2" aria-label="East face button"></span>
+                <span class="pad-button face-a" data-button-bit="1" aria-label="South face button"></span>
+              </div>
+            </div>
+            <div class="system-row">
+              <span class="pad-button small-button" data-misc-bit="2">Select</span>
+              <span class="pad-button small-button" data-misc-bit="1">Home</span>
+              <span class="pad-button small-button" data-misc-bit="4">Start</span>
+              <span class="pad-button small-button" data-misc-bit="8">Capture</span>
+            </div>
+            <div class="stick-button-row">
+              <span class="pad-button small-button" data-button-bit="256">L3</span>
+              <span class="pad-button small-button" data-button-bit="512">R3</span>
+            </div>
+          </div>
+
+          <div class="joystick-panel">
+            <h3>Joysticks</h3>
+            <div class="joystick-grid">
+              <figure>
+                <canvas id="leftJoystick" class="joystick-canvas" width="240" height="240" aria-label="Left joystick position"></canvas>
+                <figcaption>
+                  <strong>Left</strong>
+                  <span>X <b id="leftJoystickXValue">0</b></span>
+                  <span>Y <b id="leftJoystickYValue">0</b></span>
+                </figcaption>
+              </figure>
+              <figure>
+                <canvas id="rightJoystick" class="joystick-canvas" width="240" height="240" aria-label="Right joystick position"></canvas>
+                <figcaption>
+                  <strong>Right</strong>
+                  <span>X <b id="rightJoystickXValue">0</b></span>
+                  <span>Y <b id="rightJoystickYValue">0</b></span>
+                </figcaption>
+              </figure>
+            </div>
+          </div>
+        </div>
+
+        <div class="sensor-grid">
+          <article class="sensor-chart">
+            <div class="chart-heading">
+              <div>
+                <h3>Acceleration</h3>
+                <div class="chart-legend">
+                  <span class="axis-x">X <strong id="accelXValue">0</strong></span>
+                  <span class="axis-y">Y <strong id="accelYValue">0</strong></span>
+                  <span class="axis-z">Z <strong id="accelZValue">0</strong></span>
+                </div>
+              </div>
+              <div class="chart-scale-controls" aria-label="Acceleration vertical zoom">
+                <button class="btn btn-sm btn-outline-primary graph-zoom" type="button" data-graph="accel" data-zoom="out" aria-label="Zoom acceleration out">−</button>
+                <span id="accelScale">±1200</span>
+                <button class="btn btn-sm btn-outline-primary graph-zoom" type="button" data-graph="accel" data-zoom="in" aria-label="Zoom acceleration in">+</button>
+              </div>
+            </div>
+            <canvas id="accelGraph" class="sensor-canvas" width="720" height="220" aria-label="Scrolling acceleration graph"></canvas>
+          </article>
+
+          <article class="sensor-chart">
+            <div class="chart-heading">
+              <div>
+                <h3>Gyroscope</h3>
+                <div class="chart-legend">
+                  <span class="axis-x">X <strong id="gyroXValue">0</strong></span>
+                  <span class="axis-y">Y <strong id="gyroYValue">0</strong></span>
+                  <span class="axis-z">Z <strong id="gyroZValue">0</strong></span>
+                </div>
+              </div>
+              <div class="chart-scale-controls" aria-label="Gyroscope vertical zoom">
+                <button class="btn btn-sm btn-outline-primary graph-zoom" type="button" data-graph="gyro" data-zoom="out" aria-label="Zoom gyroscope out">−</button>
+                <span id="gyroScale">±10000000</span>
+                <button class="btn btn-sm btn-outline-primary graph-zoom" type="button" data-graph="gyro" data-zoom="in" aria-label="Zoom gyroscope in">+</button>
+              </div>
+            </div>
+            <canvas id="gyroGraph" class="sensor-canvas" width="720" height="220" aria-label="Scrolling gyroscope graph"></canvas>
+          </article>
+        </div>
+        </div>
+      </section>
+
+      <section id="allowedControllerDashboard" class="panel card card-body mb-3 allowed-controller-dashboard" aria-labelledby="settings-title">
         <div class="section-heading">
           <div>
             <p class="eyebrow">Stored settings</p>
@@ -112,6 +230,7 @@
           <button id="clearButton" class="btn btn-outline-danger" disabled>Clear allowed address</button>
         </div>
       </section>
+      </div>
 
       <section class="panel card card-body mb-3" aria-labelledby="neopixel-title">
         <div class="section-heading">

@@ -22,6 +22,7 @@ The page uses these commands:
 - `GET BT_ALLOW`
 - `GET BT_FILTER`
 - `GET BT_ALLOW_NEW`
+- `GET GAMEPAD`
 - `SET BT_ALLOW ...`
 - `SET BT_FILTER ...`
 - `SET BT_ALLOW_NEW ...`
@@ -49,3 +50,7 @@ defaults after a restart.
 I2C registers are entered as decimal values. I2C scan addresses are displayed
 with a hexadecimal prefix (for example, `0x33`). I2C write data and all
 received data are displayed as hexadecimal bytes.
+
+The live gamepad panel is disabled by default. When enabled, it polls
+`GET GAMEPAD` for joystick, button, D-pad, accelerometer, and gyroscope data
+while the USB serial connection is open. Disabling the panel stops polling.

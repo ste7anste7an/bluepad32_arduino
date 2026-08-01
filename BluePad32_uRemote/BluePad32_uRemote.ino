@@ -320,6 +320,7 @@ void printSerialHelp() {
   Serial.println("GET BT_ALLOW_LIST");
   Serial.println("GET BT_IN_ALLOW_LIST <b0> <b1> <b2> <b3> <b4> <b5>");
   Serial.println("GET BT_ALLOW_NEW");
+  Serial.println("GET GAMEPAD");
   Serial.println("SET BT_ALLOW <b0> <b1> <b2> <b3> <b4> <b5>");
   Serial.println("SET BT_FILTER <0|1>");
   Serial.println("SET BT_CLEAR_ALLOW_LIST");
@@ -346,7 +347,7 @@ void printSerialHelp() {
 
 void handleSerialGet(const String tokens[], uint8_t count) {
   if (count < 2) {
-    Serial.println("ERROR: GET needs a BT_*, NP_*, or SERVO command");
+    Serial.println("ERROR: GET needs a BT_*, GAMEPAD, NP_*, or SERVO command");
     return;
   }
 
@@ -361,6 +362,24 @@ void handleSerialGet(const String tokens[], uint8_t count) {
     Serial.printf("bt_filter: %u\r\n", bt_conf.bt_filter ? 1 : 0);
   } else if (tokens[1] == "BT_ALLOW_NEW") {
     Serial.printf("bt_allow_new: %u\r\n", bt_allow_new ? 1 : 0);
+  } else if (tokens[1] == "GAMEPAD") {
+    GamepadPtr gp = firstGamepad();
+    Serial.printf("gamepad: %u %d %d %d %d %u %u %u %d %d %d %d %d %d\r\n",
+                  gp ? 1 : 0,
+                  gp ? gp->axisX() : 0,
+                  gp ? gp->axisY() : 0,
+                  gp ? gp->axisRX() : 0,
+                  gp ? gp->axisRY() : 0,
+                  gp ? (unsigned int)(gp->buttons() & 0xffff) : 0,
+                  gp ? (unsigned int)(gp->dpad() & 0xff) : 0,
+                  gp ? (unsigned int)(gp->miscButtons() & 0xff) : 0,
+                  gp ? (int)gp->gyroX() : 0,
+                  gp ? (int)gp->gyroY() : 0,
+                  gp ? (int)gp->gyroZ() : 0,
+                  gp ? (int)gp->accelX() : 0,
+                  gp ? (int)gp->accelY() : 0,
+                  gp ? (int)gp->accelZ() : 0);
+    return;
   } else if (tokens[1] == "BT_ALLOW_LIST") {
     const bd_addr_t *addresses;
     int addressCount = 0;

@@ -10,6 +10,25 @@ const ui = {
   allowedMacStatus: document.querySelector("#allowedMacStatus"),
   currentPixelCount: document.querySelector("#currentPixelCount"),
   currentPixelGpio: document.querySelector("#currentPixelGpio"),
+  gamepadDashboardEnabled: document.querySelector("#gamepadDashboardEnabled"),
+  gamepadDashboardContent: document.querySelector("#gamepadDashboardContent"),
+  gamepadLiveState: document.querySelector("#gamepadLiveState"),
+  buttonIndicators: [...document.querySelectorAll("[data-button-bit]")],
+  dpadIndicators: [...document.querySelectorAll("[data-dpad-bit]")],
+  miscIndicators: [...document.querySelectorAll("[data-misc-bit]")],
+  leftJoystick: document.querySelector("#leftJoystick"),
+  rightJoystick: document.querySelector("#rightJoystick"),
+  leftJoystickXValue: document.querySelector("#leftJoystickXValue"),
+  leftJoystickYValue: document.querySelector("#leftJoystickYValue"),
+  rightJoystickXValue: document.querySelector("#rightJoystickXValue"),
+  rightJoystickYValue: document.querySelector("#rightJoystickYValue"),
+  accelGraph: document.querySelector("#accelGraph"),
+  gyroGraph: document.querySelector("#gyroGraph"),
+  accelScale: document.querySelector("#accelScale"),
+  gyroScale: document.querySelector("#gyroScale"),
+  accelValues: ["X", "Y", "Z"].map((axis) => document.querySelector(`#accel${axis}Value`)),
+  gyroValues: ["X", "Y", "Z"].map((axis) => document.querySelector(`#gyro${axis}Value`)),
+  graphZoomButtons: [...document.querySelectorAll(".graph-zoom")],
   allowedMac: document.querySelector("#allowedMac"),
   filter: document.querySelector("#filterEnabled"),
   allowNew: document.querySelector("#allowNewEnabled"),
@@ -55,7 +74,13 @@ let readTask;
 let receiveBuffer = "";
 let connectedMac = "";
 let i2cPending = false;
+let gamepadPollTimer;
 const encoder = new TextEncoder();
+const graphColors = ["#dc3545", "#198754", "#0d6efd"];
+const graphStates = {
+  accel: { canvas: ui.accelGraph, scaleElement: ui.accelScale, scale: 1200, history: [[], [], []] },
+  gyro: { canvas: ui.gyroGraph, scaleElement: ui.gyroScale, scale: 10000000, history: [[], [], []] },
+};
 
 function setConnected(connected) {
   ui.connect.textContent = connected ? "Disconnect" : "Connect";
@@ -70,6 +95,14 @@ function setConnected(connected) {
     ui.i2cScan, ui.i2cRead, ui.i2cReadReg, ui.i2cWrite, ui.i2cWriteReg,
   ].forEach((element) => { element.disabled = !connected; });
   ui.useConnected.disabled = !connected || !isMac(connectedMac) || isZeroMac(connectedMac);
+  if (!connected) {
+    stopGamepadPolling();
+    if (ui.gamepadDashboardEnabled.checked) {
+      updateGamepadVisuals([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], false);
+    }
+    ui.gamepadLiveState.textContent = ui.gamepadDashboardEnabled.checked ? "Connect to start" : "Dashboard off";
+    ui.gamepadLiveState.classList.remove("is-live");
+  }
 }
 
 function appendLog(text, outgoing = false) {
@@ -91,6 +124,177 @@ function macToBytes(value) {
 
 function bytesToMac(numbers) {
   return numbers.map((value) => value.toString(16).padStart(2, "0")).join(":").toUpperCase();
+}
+
+function setIndicatorState(indicators, mask, dataName) {
+  indicators.forEach((indicator) => {
+    const pressed = (mask & Number(indicator.dataset[dataName])) !== 0;
+    indicator.classList.toggle("pressed", pressed);
+    indicator.setAttribute("aria-pressed", pressed ? "true" : "false");
+  });
+}
+
+function drawJoystick(canvas, x, y) {
+  const context = canvas.getContext("2d");
+  const width = canvas.width;
+  const height = canvas.height;
+  const centerX = width / 2;
+  const centerY = height / 2;
+  const radius = Math.min(width, height) / 2 - 20;
+  const normalizedX = Math.max(-1, Math.min(1, x / 512));
+  const normalizedY = Math.max(-1, Math.min(1, y / 512));
+
+  context.clearRect(0, 0, width, height);
+  context.fillStyle = "#ffffff";
+  context.fillRect(0, 0, width, height);
+  context.strokeStyle = "#ced4da";
+  context.lineWidth = 2;
+  context.beginPath();
+  context.arc(centerX, centerY, radius, 0, Math.PI * 2);
+  context.stroke();
+  context.strokeStyle = "#e2e6ea";
+  context.lineWidth = 1;
+  context.beginPath();
+  context.moveTo(centerX - radius, centerY);
+  context.lineTo(centerX + radius, centerY);
+  context.moveTo(centerX, centerY - radius);
+  context.lineTo(centerX, centerY + radius);
+  context.stroke();
+  context.fillStyle = "#0d6efd";
+  context.beginPath();
+  context.arc(centerX + normalizedX * radius, centerY + normalizedY * radius, 10, 0, Math.PI * 2);
+  context.fill();
+  context.strokeStyle = "#ffffff";
+  context.lineWidth = 3;
+  context.stroke();
+}
+
+function drawGraph(graph) {
+  const context = graph.canvas.getContext("2d");
+  const width = graph.canvas.width;
+  const height = graph.canvas.height;
+  const padding = 12;
+  const plotHeight = height - padding * 2;
+
+  context.clearRect(0, 0, width, height);
+  context.fillStyle = "#ffffff";
+  context.fillRect(0, 0, width, height);
+  context.strokeStyle = "#e9ecef";
+  context.lineWidth = 1;
+  for (let row = 0; row <= 4; row += 1) {
+    const y = padding + (plotHeight * row) / 4;
+    context.beginPath();
+    context.moveTo(0, y);
+    context.lineTo(width, y);
+    context.stroke();
+  }
+  for (let column = 1; column < 6; column += 1) {
+    const x = (width * column) / 6;
+    context.beginPath();
+    context.moveTo(x, padding);
+    context.lineTo(x, height - padding);
+    context.stroke();
+  }
+  context.strokeStyle = "#adb5bd";
+  context.beginPath();
+  context.moveTo(0, height / 2);
+  context.lineTo(width, height / 2);
+  context.stroke();
+
+  graph.history.forEach((series, seriesIndex) => {
+    if (series.length < 2) return;
+    context.strokeStyle = graphColors[seriesIndex];
+    context.lineWidth = 2;
+    context.beginPath();
+    series.forEach((value, index) => {
+      const x = (index / 179) * width;
+      const normalized = Math.max(-1, Math.min(1, value / graph.scale));
+      const y = height / 2 - normalized * plotHeight / 2;
+      if (index === 0) context.moveTo(x, y);
+      else context.lineTo(x, y);
+    });
+    context.stroke();
+  });
+}
+
+function appendGraphSample(graph, values) {
+  values.forEach((value, index) => {
+    graph.history[index].push(value);
+    if (graph.history[index].length > 180) graph.history[index].shift();
+  });
+  drawGraph(graph);
+}
+
+function updateGamepadVisuals(values, recordGraphs = true) {
+  const [connected, leftX, leftY, rightX, rightY, buttons, dpad, misc,
+    gyroX, gyroY, gyroZ, accelX, accelY, accelZ] = values;
+  setIndicatorState(ui.buttonIndicators, buttons, "buttonBit");
+  setIndicatorState(ui.dpadIndicators, dpad, "dpadBit");
+  setIndicatorState(ui.miscIndicators, misc, "miscBit");
+  drawJoystick(ui.leftJoystick, leftX, leftY);
+  drawJoystick(ui.rightJoystick, rightX, rightY);
+  ui.leftJoystickXValue.textContent = leftX;
+  ui.leftJoystickYValue.textContent = leftY;
+  ui.rightJoystickXValue.textContent = rightX;
+  ui.rightJoystickYValue.textContent = rightY;
+  [gyroX, gyroY, gyroZ].forEach((value, index) => { ui.gyroValues[index].textContent = value; });
+  [accelX, accelY, accelZ].forEach((value, index) => { ui.accelValues[index].textContent = value; });
+  ui.gamepadLiveState.textContent = connected ? "Live" : "Controller not connected";
+  ui.gamepadLiveState.classList.toggle("is-live", connected === 1);
+  ui.controllerState.textContent = connected ? "Connected" : "Not connected";
+  if (recordGraphs) {
+    appendGraphSample(graphStates.gyro, [gyroX, gyroY, gyroZ]);
+    appendGraphSample(graphStates.accel, [accelX, accelY, accelZ]);
+  }
+}
+
+function zoomGraph(name, direction) {
+  const graph = graphStates[name];
+  const factor = direction === "in" ? 2 / 3 : 1.5;
+  graph.scale = Math.max(10, Math.min(1000000000, Math.round(graph.scale * factor)));
+  graph.scaleElement.textContent = `±${graph.scale}`;
+  drawGraph(graph);
+}
+
+async function pollGamepad() {
+  if (!writer || !ui.gamepadDashboardEnabled.checked) return;
+  try {
+    await send("GET GAMEPAD", false);
+  } catch (error) {
+    ui.gamepadLiveState.textContent = "Readout stopped";
+    ui.gamepadLiveState.classList.remove("is-live");
+    appendLog(`Gamepad readout error: ${error.message}`);
+    return;
+  }
+  if (writer && ui.gamepadDashboardEnabled.checked) {
+    gamepadPollTimer = window.setTimeout(pollGamepad, 50);
+  }
+}
+
+function startGamepadPolling() {
+  stopGamepadPolling();
+  if (!writer || !ui.gamepadDashboardEnabled.checked) return;
+  ui.gamepadLiveState.textContent = "Waiting for controller…";
+  pollGamepad();
+}
+
+function stopGamepadPolling() {
+  if (gamepadPollTimer) window.clearTimeout(gamepadPollTimer);
+  gamepadPollTimer = undefined;
+}
+
+function setGamepadDashboardEnabled(enabled) {
+  ui.gamepadDashboardEnabled.checked = enabled;
+  ui.gamepadDashboardContent.hidden = !enabled;
+  if (!enabled) {
+    stopGamepadPolling();
+    ui.gamepadLiveState.textContent = "Dashboard off";
+    ui.gamepadLiveState.classList.remove("is-live");
+    return;
+  }
+  updateGamepadVisuals([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], false);
+  if (writer) startGamepadPolling();
+  else ui.gamepadLiveState.textContent = "Connect to start";
 }
 
 function formatI2cAddresses(value) {
@@ -155,9 +359,9 @@ function appendI2cOutput(message) {
   }
 }
 
-async function send(command) {
+async function send(command, logCommand = true) {
   if (!writer) throw new Error("Serial port is not connected");
-  appendLog(command, true);
+  if (logCommand) appendLog(command, true);
   await writer.write(encoder.encode(`${command}\r`));
 }
 
@@ -175,6 +379,13 @@ async function refreshSettings() {
 function parseLine(rawLine) {
   const line = rawLine.trim();
   if (!line) return;
+  const gamepadMatch = line.match(/^gamepad:\s*(-?\d+(?:\s+-?\d+){13})$/i);
+  if (gamepadMatch) {
+    if (ui.gamepadDashboardEnabled.checked) {
+      updateGamepadVisuals(gamepadMatch[1].split(/\s+/).map(Number));
+    }
+    return;
+  }
   appendLog(line);
 
   if (i2cPending && /^ERROR:/i.test(line)) {
@@ -311,9 +522,11 @@ async function connect() {
   // Opening a serial port can reset an ESP32. Give setup time to finish.
   await delay(1400);
   await refreshSettings();
+  if (ui.gamepadDashboardEnabled.checked) startGamepadPolling();
 }
 
 async function disconnect() {
+  stopGamepadPolling();
   await closePort();
   setConnected(false);
 }
@@ -323,6 +536,7 @@ async function toggleConnection() {
     if (port) await disconnect();
     else await connect();
   } catch (error) {
+    stopGamepadPolling();
     appendLog(`Connection error: ${error.message}`);
     setConnected(false);
   }
@@ -442,6 +656,12 @@ ui.i2cRead.addEventListener("click", () => runI2c("read"));
 ui.i2cReadReg.addEventListener("click", () => runI2c("readReg"));
 ui.i2cWrite.addEventListener("click", () => runI2c("write"));
 ui.i2cWriteReg.addEventListener("click", () => runI2c("writeReg"));
+ui.graphZoomButtons.forEach((button) => {
+  button.addEventListener("click", () => zoomGraph(button.dataset.graph, button.dataset.zoom));
+});
+ui.gamepadDashboardEnabled.addEventListener("change", () => {
+  setGamepadDashboardEnabled(ui.gamepadDashboardEnabled.checked);
+});
 ui.useConnected.addEventListener("click", () => {
   ui.allowedMac.value = connectedMac;
   ui.macError.textContent = "";
@@ -460,4 +680,5 @@ if (!("serial" in navigator)) {
   ui.support.textContent = "Web Serial is not supported. Use current Chrome or Edge on HTTPS or localhost.";
   ui.connect.disabled = true;
 }
+setGamepadDashboardEnabled(false);
 setConnected(false);
