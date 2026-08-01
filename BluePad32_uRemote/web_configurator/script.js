@@ -254,7 +254,7 @@ function parseLine(rawLine) {
   if (match) appendI2cOutput(`Found: ${match[1]} device(s)`);
 
   match = line.match(/^i2c_addresses:\s*(.*)$/i);
-  if (match) appendI2cOutput(`Addresses: ${match[1].trim() || "(none)"}`);
+  if (match) appendI2cOutput(`Addresses (hex): ${match[1].trim() || "(none)"}`);
 
   match = line.match(/^i2c_received:\s*(\d+)$/i);
   if (match) appendI2cOutput(`Received: ${match[1]} byte(s)`);
