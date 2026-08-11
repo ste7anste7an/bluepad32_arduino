@@ -1,0 +1,349 @@
+<!-- wp:heading {"level":1} -->
+<h1 class="wp-block-heading">BluePad libraries for Pybricks</h1>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph -->
+<p>This document covers the two BluePad Python libraries:</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:list -->
+<ul class="wp-block-list">
+<li><strong>PUPRemote/LPF2 <code>bluepad.py</code> 2.1.0</strong> from <a href="https://github.com/AntonsMindstorms/PUPRemote/blob/main/src/bluepad.py">AntonsMindstorms/PUPRemote</a>, read on 11 August 2026;</li>
+<li><strong>uRemote <code>bluepad_ur.py</code> 2.2.0-uremote</strong> in the BluePad32 uRemote distribution.</li>
+</ul>
+<!-- /wp:list -->
+
+<!-- wp:paragraph -->
+<p>Both expose a <code>BluePad</code> class and preserve the familiar six-value gamepad reading, but they are clients for different ESP32 firmware and are not drop-in transport replacements.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:heading -->
+<h2 class="wp-block-heading">What is BluePad for Pybricks?</h2>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph -->
+<p>BluePad lets a Pybricks program use a Bluetooth game controller through an ESP32 or LMS-ESP32 board. Bluepad32 runs on the ESP32 and handles the wireless controller connection. The ESP32 is connected by cable to a LEGO hub port, and the Python library presents the controller data to the Pybricks program.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph -->
+<p>There are two versions:</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:list -->
+<ul class="wp-block-list">
+<li><strong>PUPRemote/LPF2 BluePad</strong> makes the ESP32 appear as a LEGO Powered Up device. Pybricks accesses it through <code>PUPDevice</code>. This version provides the established six-field gamepad API and can control NeoPixels and servos connected to the ESP32.</li>
+<li><strong>uRemote BluePad</strong> uses named uRemote commands instead of LPF2 modes. It keeps the common gamepad API and adds connection status, raw gamepad data, miscellaneous buttons, triggers, controller IMU data, I2C access, Bluetooth allow-list management, and explicit servo detach commands. It requires the compatible <code>uremote.py</code> client in the Pybricks project.</li>
+</ul>
+<!-- /wp:list -->
+
+<!-- wp:paragraph -->
+<p>With either version, a Pybricks robot can be driven with the two joysticks, react to face and direction-pad buttons, move servos, and control status or decorative NeoPixels. The uRemote version can additionally use supported controller motion sensors, communicate with I2C devices connected to the ESP32, inspect the connected controller, and restrict connections to one Bluetooth address.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:heading -->
+<h2 class="wp-block-heading">Installing the ESP32 firmware</h2>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph -->
+<p>The web installer is available at <a href="https://firmware.antonsmindstorms.com/">firmware.antonsmindstorms.com</a>. Connect the ESP32 or LMS-ESP32 to the computer with a USB data cable and select the firmware that matches the Python library:</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:list -->
+<ul class="wp-block-list">
+<li>choose <strong>BluePad LPF2</strong> for the PUPRemote/LPF2 <code>bluepad.py</code> library;</li>
+<li>choose <strong>BluePad uRemote</strong> for <code>bluepad_ur.py</code> and <code>uremote.py</code>.</li>
+</ul>
+<!-- /wp:list -->
+
+<!-- wp:paragraph -->
+<p>Click <strong>Flash firmware</strong> in the selected row, choose the board's serial port when the browser asks, and follow the installer until flashing is complete. Restart or reconnect the board afterward. A Chromium-based browser with Web Serial support, such as Chrome or Edge, is normally required. If a serial port does not appear, check that the USB cable supports data and close programs that may already have the port open.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph -->
+<p>The ESP32 firmware and Pybricks library must be from the same variant. An LPF2 library cannot communicate with the uRemote firmware, and <code>bluepad_ur.py</code> cannot communicate with the LPF2 firmware.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:heading -->
+<h2 class="wp-block-heading">Browser configuration and debugging</h2>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph -->
+<p>Both variants have a USB web configurator. Connect the ESP32 directly to the computer by USB, open the appropriate page in a Web Serial capable browser, click <strong>Connect</strong>, and select the board's serial port. Close Arduino Serial Monitor or any other program using that port first.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:heading {"level":3} -->
+<h3 class="wp-block-heading">LPF2/PUP configurator</h3>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph -->
+<p><a href="https://bluepad.antonsmindstorms.com/">bluepad.antonsmindstorms.com</a> is for the BluePad LPF2 firmware used with SPIKE and Pybricks. It can:</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:list -->
+<ul class="wp-block-list">
+<li>load the current configuration from the board;</li>
+<li>select the LEGO device emulation, including Color Sensor or Color Matrix;</li>
+<li>configure the NeoPixel count and GPIO pin;</li>
+<li>edit matrix/pixel mapping and LEGO color mappings;</li>
+<li>inspect the connected controller MAC address and configure Bluetooth filtering for one allowed controller;</li>
+<li>try settings temporarily, save them to flash, reset defaults, and test NeoPixels.</li>
+</ul>
+<!-- /wp:list -->
+
+<!-- wp:paragraph -->
+<p>Use <strong>Send &amp; try config</strong> while testing. Use <strong>Send &amp; save to flash</strong> when the configuration should survive a restart. The page may ask for a board reboot after changing the emulated sensor type or when reconnecting to a hub.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:heading {"level":3} -->
+<h3 class="wp-block-heading">uRemote configurator</h3>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph -->
+<p><a href="https://bluepadur.antonsmindstorms.com/">bluepadur.antonsmindstorms.com</a> is for the BluePad32 uRemote firmware. It provides configuration and live diagnostic tools for:</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:list -->
+<ul class="wp-block-list">
+<li>controller connection state, connected and allowed MAC addresses;</li>
+<li>an optional live gamepad display showing buttons, both joysticks, acceleration, and gyroscope values;</li>
+<li>the allowed controller, Bluetooth filter, new-connection setting, and saved Bluetooth configuration;</li>
+<li>runtime NeoPixel count and GPIO configuration, plus pixel, fill, and clear tests;</li>
+<li>all four servo channels, including angle tests and detach controls;</li>
+<li>I2C bus scanning and device read/write tests.</li>
+</ul>
+<!-- /wp:list -->
+
+<!-- wp:paragraph -->
+<p>Live gamepad polling is off by default and can be enabled when debugging. In the uRemote firmware, Bluetooth allow-list settings can be saved, while the NeoPixel configuration is runtime-only and returns to the firmware defaults after a restart.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:heading -->
+<h2 class="wp-block-heading">Which library to use</h2>
+<!-- /wp:heading -->
+
+<!-- wp:table {"hasFixedLayout":true} -->
+<figure class="wp-block-table"><table class="has-fixed-layout"><thead><tr><th>ESP32 firmware</th><th>Pybricks file</th><th>Import</th><th>Additional file</th></tr></thead><tbody>
+<tr><td>BluePad32 PUPRemote/LPF2</td><td>upstream <code>bluepad.py</code></td><td><code>from bluepad import BluePad</code></td><td>none; it uses Pybricks <code>PUPDevice</code></td></tr>
+<tr><td>BluePad32 uRemote</td><td>local <code>bluepad_ur.py</code></td><td><code>from bluepad_ur import BluePad</code></td><td>upload the compatible <code>uremote.py</code> client too</td></tr>
+</tbody></table></figure>
+<!-- /wp:table -->
+
+<!-- wp:paragraph -->
+<p>Create an object in the same way for either transport:</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:code -->
+<pre class="wp-block-code"><code>from pybricks.parameters import Port
+from bluepad_ur import BluePad       # uRemote firmware
+
+bp = BluePad(Port.A)</code></pre>
+<!-- /wp:code -->
+
+<!-- wp:paragraph -->
+<p>Only the import changes in the equivalent PUPRemote example.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:heading -->
+<h2 class="wp-block-heading">Common gamepad result</h2>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph -->
+<p>In both libraries, <code>bp.gamepad()</code> returns these six values in this order:</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:code -->
+<pre class="wp-block-code"><code>(left_x, left_y, right_x, right_y, buttons, dpad)</code></pre>
+<!-- /wp:code -->
+
+<!-- wp:paragraph -->
+<p>The four axes are centered at 0 and are approximately -128..127. <code>buttons</code> and <code>dpad</code> are bit masks. Both libraries also implement:</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:code -->
+<pre class="wp-block-code"><code>bp.btns_pressed(buttons, nintendo=False)
+bp.dpad_pressed(dpad, nintendo=False)</code></pre>
+<!-- /wp:code -->
+
+<!-- wp:paragraph -->
+<p>For the default mapping, face-button names are <code>X</code>, <code>O</code>, <code>[]</code>, and <code>V</code>. With <code>nintendo=True</code>, the mapping is <code>B</code>, <code>A</code>, <code>Y</code>, <code>X</code>, <code>L</code>, <code>R</code>, <code>ZL</code>, and <code>ZR</code>. Direction names are <code>L</code>, <code>R</code>, <code>U</code>, and <code>D</code>.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:heading -->
+<h2 class="wp-block-heading">Class method comparison</h2>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph -->
+<p>Legend: <strong>same</strong> means the public method name and basic purpose match; <strong>different</strong> means callers must account for an API or behavior change; <strong>uRemote only</strong> and <strong>PUPRemote only</strong> indicate an extension in one library.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:table {"hasFixedLayout":true} -->
+<figure class="wp-block-table"><table class="has-fixed-layout"><thead><tr><th>Method</th><th>Availability</th><th>Comparison</th></tr></thead><tbody>
+<tr><td><code>BluePad(port)</code></td><td>same</td><td>Both take a Pybricks <code>Port</code>. PUPRemote creates a <code>PUPDevice</code> and detects LPF2 sensor ID 61/64; uRemote creates <code>uRemote(port)</code>.</td></tr>
+<tr><td><code>gamepad(...)</code></td><td>different</td><td>Both return the same six fields. PUPRemote accepts <code>mode=-1, deadzone=5</code>, clamps small axes to zero, and returns all zeroes when disconnected. uRemote accepts only <code>mode=-1</code>, ignores the mode for transport, and applies no deadzone.</td></tr>
+<tr><td><code>btns_pressed(buttons, nintendo=False)</code></td><td>same</td><td>Same decoding and returned list of button names.</td></tr>
+<tr><td><code>dpad_pressed(dpad, nintendo=False)</code></td><td>same</td><td>Same decoding and returned list of direction names.</td></tr>
+<tr><td><code>send(byte_vals)</code></td><td>different</td><td>PUPRemote writes a legacy 9- or 16-byte LPF2 packet. uRemote accepts the old 16-byte NeoPixel packet format only as a compatibility adapter and translates recognized commands into RPC calls. Prefer the named uRemote methods.</td></tr>
+<tr><td><code>neopixel_init(count, pin)</code></td><td>same purpose</td><td>LPF2 sends a configuration packet. uRemote calls <code>np_cfg</code>; valid firmware values are count 1..64 and GPIO 0..39.</td></tr>
+<tr><td><code>neopixel_fill(color, write=True)</code></td><td>different</td><td>Both set every pixel. LPF2 honors <code>write=False</code> for deferred display. The current uRemote firmware always shows a fill, so its <code>write</code> argument is accepted but has no effect.</td></tr>
+<tr><td><code>neopixel_zero(write=True)</code></td><td>different</td><td>Both clear the strip. uRemote always shows immediately; its <code>write</code> argument has no effect.</td></tr>
+<tr><td><code>neopixel_set(index, color, write=True)</code></td><td>same purpose</td><td>Both validate against the configured count. uRemote sends the firmware <code>pix</code> command but currently always calls it with immediate display; its <code>write</code> argument has no effect.</td></tr>
+<tr><td><code>neopixel_set_multi(start, count, rgb_values, write=True)</code></td><td>different</td><td>PUPRemote sends up to four pixels in one packet. uRemote has no multi-pixel firmware RPC and loops over <code>pix</code>, with no four-pixel limit. It therefore uses multiple UART round trips and is not atomic.</td></tr>
+<tr><td><code>servo(index, position, ...)</code></td><td>different</td><td>PUPRemote has <code>zero_is_mid=True</code>: its default position range is -90..90 and 0 maps to physical 90 degrees. uRemote takes a direct 0..180 angle; 90 is midpoint, and 1000 detaches. It has no <code>zero_is_mid</code> parameter.</td></tr>
+<tr><td><code>servos(targets, zero_is_mid=True)</code></td><td>PUPRemote only</td><td>Sends several servo targets. uRemote has no wrapper method, although raw <code>bp.call("servo", a0, a1, a2, a3)</code> sets four targets in one command.</td></tr>
+<tr><td><code>servo_off(index=None)</code></td><td>uRemote only</td><td>Detaches one servo or all servos.</td></tr>
+<tr><td><code>call(command, *args)</code></td><td>uRemote only</td><td>Calls any raw firmware RPC and returns its reply.</td></tr>
+<tr><td><code>ping()</code>, <code>version()</code>, <code>status()</code>, <code>connected()</code></td><td>uRemote only</td><td>Device and connection information.</td></tr>
+<tr><td><code>pad(raw=False)</code></td><td>uRemote only</td><td>Reads the packed packet. With <code>raw=True</code>, returns all ten bytes including connection, misc buttons, and triggers.</td></tr>
+<tr><td><code>joy(raw=False)</code>, <code>joyl(raw=False)</code>, <code>joyr(raw=False)</code></td><td>uRemote only</td><td>Reads both, left, or right sticks. Default output is signed; <code>raw=True</code> returns firmware values 0..255.</td></tr>
+<tr><td><code>btn()</code></td><td>uRemote only</td><td>Returns <code>buttons, dpad, misc</code>; unlike <code>gamepad()</code>, the button value can contain all 16 firmware button bits.</td></tr>
+<tr><td><code>imu()</code></td><td>uRemote only</td><td>Returns three gyro and three acceleration values.</td></tr>
+<tr><td><code>i2c_scan()</code>, <code>i2c_read(...)</code>, <code>i2c_read_reg(...)</code></td><td>uRemote only</td><td>Scans and reads the ESP32 I2C bus.</td></tr>
+<tr><td><code>i2c_write(...)</code>, <code>i2c_write_reg(...)</code></td><td>uRemote only</td><td>Writes the ESP32 I2C bus and returns <code>(error, bytes_written)</code>.</td></tr>
+<tr><td><code>i2c_read_u8(...)</code>, <code>i2c_write_u8(...)</code></td><td>uRemote only</td><td>Single-register convenience methods.</td></tr>
+<tr><td><code>bt_mac()</code>, <code>bluetooth_address()</code></td><td>uRemote only</td><td>Reads the connected controller MAC.</td></tr>
+<tr><td><code>bt_allow(...)</code>, <code>bt_filter(...)</code>, <code>bt_clear()</code>, <code>bt_forget()</code></td><td>uRemote only</td><td>Manages the one-address Bluetooth allow list and pairing keys.</td></tr>
+<tr><td><code>save()</code>, <code>load()</code>, <code>defaults()</code></td><td>uRemote only</td><td>Manages persistent Bluetooth settings.</td></tr>
+</tbody></table></figure>
+<!-- /wp:table -->
+
+<!-- wp:heading {"level":3} -->
+<h3 class="wp-block-heading">Important disconnection difference</h3>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph -->
+<p>PUPRemote <code>gamepad()</code> explicitly detects the firmware's disconnected sentinel and returns <code>(0, 0, 0, 0, 0, 0)</code>. The uRemote firmware sends zero as each raw axis when disconnected, and <code>bluepad_ur.py</code> converts it by subtracting 128. Consequently, uRemote <code>gamepad()</code>, <code>joy()</code>, <code>joyl()</code>, and <code>joyr()</code> can report <code>-128</code> axes while disconnected. Use <code>bp.connected()</code> first.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:heading {"level":3} -->
+<h3 class="wp-block-heading">Important servo conversion</h3>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph -->
+<p>These calls aim at the same physical midpoint:</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:code -->
+<pre class="wp-block-code"><code># PUPRemote bluepad.py: zero_is_mid defaults to True.
+bp.servo(0, 0)
+
+# uRemote bluepad_ur.py: direct physical angle.
+bp.servo(0, 90)</code></pre>
+<!-- /wp:code -->
+
+<!-- wp:paragraph -->
+<p>To keep old 0..180 application values with PUPRemote, specify <code>zero_is_mid=False</code>. To migrate a default PUPRemote target to uRemote, add 90 and constrain the result to the valid range.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:heading -->
+<h2 class="wp-block-heading">Module-level helper comparison</h2>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph -->
+<p>Both files also provide block-style functions backed by a global <code>BluePad</code> instance initialized with <code>bluepad_init("A")</code>.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:table {"hasFixedLayout":true} -->
+<figure class="wp-block-table"><table class="has-fixed-layout"><thead><tr><th>Helper</th><th>PUPRemote</th><th>uRemote</th><th>Notes</th></tr></thead><tbody>
+<tr><td><code>bluepad_init(port_letter, nintendo=True)</code></td><td>yes</td><td>yes</td><td>uRemote uses <code>getattr(Port, port_letter)</code> instead of <code>eval</code>. The saved Nintendo flag is not automatically applied by the other helpers in either file.</td></tr>
+<tr><td>four <code>get_*_stick_*()</code> helpers</td><td>yes</td><td>yes</td><td>Convert axes to an approximately -100..100 percentage; vertical signs are inverted.</td></tr>
+<tr><td><code>get_direction_pad()</code>, <code>get_buttons()</code></td><td>yes</td><td>yes</td><td>Return raw masks from <code>gamepad()</code>.</td></tr>
+<tr><td><code>color_convert(...)</code></td><td>yes</td><td>yes</td><td>Converts a Pybricks <code>Color</code> or RGB tuple and intensity.</td></tr>
+<tr><td><code>set_neopixel(...)</code>, <code>init_neopixel(...)</code>, <code>fill_neopixel(...)</code></td><td>yes</td><td>yes</td><td>uRemote returns the underlying result. Its <code>fill_neopixel</code> intensity defaults to 1; upstream PUPRemote requires it.</td></tr>
+<tr><td><code>set_servo(...)</code></td><td>yes</td><td>yes</td><td>Be careful: it calls the different servo semantics described above.</td></tr>
+<tr><td><code>gamepad()</code></td><td>yes</td><td>yes</td><td>Returns the common six-field reading.</td></tr>
+<tr><td><code>servo_off(...)</code>, <code>joyl()</code>, <code>joyr()</code>, <code>imu()</code></td><td>no</td><td>yes</td><td>uRemote extensions.</td></tr>
+<tr><td>I2C helpers</td><td>no</td><td>yes</td><td><code>i2c_scan/read/read_reg/write/write_reg</code>.</td></tr>
+<tr><td>Bluetooth helpers</td><td>no</td><td>yes</td><td><code>bt_mac</code>, <code>bt_allow</code>, <code>bt_filter</code>, <code>bt_clear</code>, <code>bt_forget</code>, <code>bt_save</code>, and <code>bt_load</code>.</td></tr>
+</tbody></table></figure>
+<!-- /wp:table -->
+
+<!-- wp:paragraph -->
+<p>The uRemote class also contains <code>joy()</code> and several additional methods that do not have module-level wrappers. Instantiate <code>BluePad</code> when the complete API is needed.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:heading -->
+<h2 class="wp-block-heading">Pybricks example: PUPRemote/LPF2 firmware</h2>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph -->
+<p>Upload the current upstream <code>bluepad.py</code> to the Pybricks project. This example reads the sticks and buttons while safely handling disconnection. PUPRemote's library applies its default deadzone of 5.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:code -->
+<pre class="wp-block-code"><code>from pybricks.parameters import Port
+from pybricks.tools import wait
+from bluepad import BluePad
+
+bp = BluePad(Port.A)
+
+while True:
+    lx, ly, rx, ry, buttons, dpad = bp.gamepad()
+
+    # The PUPRemote library returns this complete zero tuple when disconnected.
+    if (lx, ly, rx, ry, buttons, dpad) == (0, 0, 0, 0, 0, 0):
+        print("centered or disconnected")
+    else:
+        print("sticks:", lx, ly, rx, ry)
+        print("buttons:", bp.btns_pressed(buttons))
+        print("dpad:", bp.dpad_pressed(dpad))
+
+    wait(20)</code></pre>
+<!-- /wp:code -->
+
+<!-- wp:paragraph -->
+<p>The all-zero result is also valid when a connected controller is centered and no buttons are held, so this transport cannot distinguish those two states through <code>gamepad()</code> alone.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:heading -->
+<h2 class="wp-block-heading">Pybricks example: uRemote firmware</h2>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph -->
+<p>Upload <code>bluepad_ur.py</code> and the compatible <code>uremote.py</code> to the Pybricks project. This example uses the explicit uRemote connection state and reads the extended button tuple as well as the common six-field value.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:code -->
+<pre class="wp-block-code"><code>from pybricks.parameters import Port
+from pybricks.tools import wait
+from bluepad_ur import BluePad
+
+bp = BluePad(Port.A)
+
+while True:
+    if bp.connected():
+        lx, ly, rx, ry, buttons, dpad = bp.gamepad()
+        buttons16, dpad8, misc = bp.btn()
+
+        print("sticks:", lx, ly, rx, ry)
+        print("buttons:", bp.btns_pressed(buttons16))
+        print("dpad:", bp.dpad_pressed(dpad8))
+        print("misc mask:", misc)
+    else:
+        print("waiting for gamepad")
+
+    wait(20)</code></pre>
+<!-- /wp:code -->
+
+<!-- wp:paragraph -->
+<p>For fewer UART calls per loop, <code>bp.pad(raw=True)</code> returns connection state, sticks, buttons, direction pad, miscellaneous buttons, and both triggers in a single 10-byte response.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:heading -->
+<h2 class="wp-block-heading">Migration checklist</h2>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph -->
+<p>When moving a project between these libraries:</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:list {"ordered":true} -->
+<ol class="wp-block-list">
+<li>Flash the matching LPF2/PUPRemote or uRemote ESP32 firmware.</li>
+<li>Change the import between <code>bluepad</code> and <code>bluepad_ur</code>.</li>
+<li>Keep <code>gamepad()</code>, <code>btns_pressed()</code>, and <code>dpad_pressed()</code> for the common path.</li>
+<li>Add application-side deadzone handling when moving to uRemote if needed.</li>
+<li>Convert servo targets because the default angle origins differ.</li>
+<li>Do not rely on deferred NeoPixel writes with the current uRemote wrapper.</li>
+<li>Use <code>connected()</code> in uRemote code before interpreting axis values.</li>
+</ol>
+<!-- /wp:list -->

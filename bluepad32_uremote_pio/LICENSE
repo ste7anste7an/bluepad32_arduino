@@ -1,0 +1,9 @@
+LICENSES
+
+* Template code: Apache-2.0
+* bluepad32: Apache-2.0
+* bluepad32_arduino: Apache-2.0 and LGPL-2.1-or-later
+* btstack: https://github.com/bluekitchen/btstack/blob/master/LICENSE
+* Arduino-ESP32: LGPL-2.1
+* Adafruit NeoPixel: LGPL-3.0
+* Click: BSD-3-Clause

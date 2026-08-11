@@ -1,0 +1,7 @@
+.pio/
+managed_components/
+sdkconfig
+sdkconfig.old
+build/
+cmake-build-*/
+.vscode/
