@@ -121,6 +121,29 @@
   font-size: 1rem;
 }
 
+.controls-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.button-masks {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px 14px;
+  color: #6c757d;
+  font-size: .76rem;
+}
+
+.button-masks output {
+  margin-left: 3px;
+  color: #212529;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-weight: 700;
+}
+
 .shoulder-row,
 .system-row,
 .stick-button-row {
@@ -446,6 +469,104 @@ small {
 
 #log {
   max-height: 260px;
+}
+
+.theme-switch {
+  white-space: nowrap;
+}
+
+html[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+html[data-theme="dark"] body {
+  color: #e7edf3;
+  background: #111820;
+}
+
+html[data-theme="dark"] .card,
+html[data-theme="dark"] .form-control,
+html[data-theme="dark"] .form-select {
+  color: #e7edf3;
+  border-color: #3a4652;
+  background-color: #18212b;
+}
+
+html[data-theme="dark"] .form-control:disabled,
+html[data-theme="dark"] .form-control[readonly] {
+  color: #9ca8b5;
+  background-color: #202b36;
+}
+
+html[data-theme="dark"] .border-bottom,
+html[data-theme="dark"] .switch-row,
+html[data-theme="dark"] .actions.separated,
+html[data-theme="dark"] .servo-grid,
+html[data-theme="dark"] .servo-row {
+  border-color: #3a4652 !important;
+}
+
+html[data-theme="dark"] .gamepad-controls,
+html[data-theme="dark"] .joystick-panel,
+html[data-theme="dark"] .sensor-chart,
+html[data-theme="dark"] .subpanel {
+  border-color: #3a4652;
+  background: #202b36;
+}
+
+html[data-theme="dark"] .status-card span,
+html[data-theme="dark"] .text-muted,
+html[data-theme="dark"] .field-hint,
+html[data-theme="dark"] .value-state,
+html[data-theme="dark"] small,
+html[data-theme="dark"] .button-masks,
+html[data-theme="dark"] .joystick-grid figcaption span {
+  color: #9ca8b5 !important;
+}
+
+html[data-theme="dark"] .button-masks output,
+html[data-theme="dark"] .joystick-grid figcaption,
+html[data-theme="dark"] .chart-scale-controls span {
+  color: #e7edf3;
+}
+
+html[data-theme="dark"] .pad-button {
+  color: #d9e1e8;
+  border-color: #778391;
+  background: #18212b;
+}
+
+html[data-theme="dark"] .pad-button.pressed {
+  color: #fff;
+  border-color: #4d94ff;
+  background: #0d6efd;
+}
+
+html[data-theme="dark"] .dpad-center {
+  border-color: #778391;
+  background: #778391;
+}
+
+html[data-theme="dark"] .live-state {
+  color: #d9e1e8;
+  background: #34404c;
+}
+
+html[data-theme="dark"] .live-state.is-live {
+  color: #b7f0d0;
+  background: #174c36;
+}
+
+html[data-theme="dark"] .alert-warning {
+  color: #ffe69c;
+  border-color: #66531b;
+  background-color: #332b16;
+}
+
+html[data-theme="dark"] .alert-success {
+  color: #b7f0d0;
+  border-color: #246b4d;
+  background-color: #173d2d;
 }
 
 .log-panel summary {

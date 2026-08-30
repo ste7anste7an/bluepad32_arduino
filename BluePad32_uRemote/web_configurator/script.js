@@ -1,6 +1,8 @@
 "use strict";
 
 const ui = {
+  darkModeEnabled: document.querySelector("#darkModeEnabled"),
+  themeColor: document.querySelector('meta[name="theme-color"]'),
   connect: document.querySelector("#connectButton"),
   refresh: document.querySelector("#refreshButton"),
   state: document.querySelector("#connectionState"),
@@ -16,6 +18,9 @@ const ui = {
   buttonIndicators: [...document.querySelectorAll("[data-button-bit]")],
   dpadIndicators: [...document.querySelectorAll("[data-dpad-bit]")],
   miscIndicators: [...document.querySelectorAll("[data-misc-bit]")],
+  buttonsHexValue: document.querySelector("#buttonsHexValue"),
+  dpadHexValue: document.querySelector("#dpadHexValue"),
+  miscHexValue: document.querySelector("#miscHexValue"),
   leftJoystick: document.querySelector("#leftJoystick"),
   rightJoystick: document.querySelector("#rightJoystick"),
   leftJoystickXValue: document.querySelector("#leftJoystickXValue"),
@@ -82,6 +87,32 @@ const graphStates = {
   gyro: { canvas: ui.gyroGraph, scaleElement: ui.gyroScale, scale: 10000000, history: [[], [], []] },
 };
 
+function isDarkMode() {
+  return document.documentElement.dataset.theme === "dark";
+}
+
+function setDarkMode(enabled, savePreference = true) {
+  if (enabled) document.documentElement.dataset.theme = "dark";
+  else delete document.documentElement.dataset.theme;
+  ui.darkModeEnabled.checked = enabled;
+  ui.themeColor.content = enabled ? "#111820" : "#15324b";
+  if (savePreference) {
+    try {
+      localStorage.setItem("bluepad32-theme", enabled ? "dark" : "light");
+    } catch (_) {
+      // A blocked storage API should not prevent changing the current theme.
+    }
+  }
+  drawJoystick(ui.leftJoystick, Number(ui.leftJoystickXValue.textContent), Number(ui.leftJoystickYValue.textContent));
+  drawJoystick(ui.rightJoystick, Number(ui.rightJoystickXValue.textContent), Number(ui.rightJoystickYValue.textContent));
+  drawGraph(graphStates.accel);
+  drawGraph(graphStates.gyro);
+}
+
+function formatHexMask(value, minimumDigits) {
+  return `0x${(Number(value) >>> 0).toString(16).toUpperCase().padStart(minimumDigits, "0")}`;
+}
+
 function setConnected(connected) {
   ui.connect.textContent = connected ? "Disconnect" : "Connect";
   ui.state.textContent = connected ? "Connected to serial port" : "Not connected";
@@ -145,14 +176,14 @@ function drawJoystick(canvas, x, y) {
   const normalizedY = Math.max(-1, Math.min(1, y / 512));
 
   context.clearRect(0, 0, width, height);
-  context.fillStyle = "#ffffff";
+  context.fillStyle = isDarkMode() ? "#18212b" : "#ffffff";
   context.fillRect(0, 0, width, height);
-  context.strokeStyle = "#ced4da";
+  context.strokeStyle = isDarkMode() ? "#778391" : "#ced4da";
   context.lineWidth = 2;
   context.beginPath();
   context.arc(centerX, centerY, radius, 0, Math.PI * 2);
   context.stroke();
-  context.strokeStyle = "#e2e6ea";
+  context.strokeStyle = isDarkMode() ? "#3a4652" : "#e2e6ea";
   context.lineWidth = 1;
   context.beginPath();
   context.moveTo(centerX - radius, centerY);
@@ -164,7 +195,7 @@ function drawJoystick(canvas, x, y) {
   context.beginPath();
   context.arc(centerX + normalizedX * radius, centerY + normalizedY * radius, 10, 0, Math.PI * 2);
   context.fill();
-  context.strokeStyle = "#ffffff";
+  context.strokeStyle = isDarkMode() ? "#e7edf3" : "#ffffff";
   context.lineWidth = 3;
   context.stroke();
 }
@@ -177,9 +208,9 @@ function drawGraph(graph) {
   const plotHeight = height - padding * 2;
 
   context.clearRect(0, 0, width, height);
-  context.fillStyle = "#ffffff";
+  context.fillStyle = isDarkMode() ? "#18212b" : "#ffffff";
   context.fillRect(0, 0, width, height);
-  context.strokeStyle = "#e9ecef";
+  context.strokeStyle = isDarkMode() ? "#34404c" : "#e9ecef";
   context.lineWidth = 1;
   for (let row = 0; row <= 4; row += 1) {
     const y = padding + (plotHeight * row) / 4;
@@ -195,7 +226,7 @@ function drawGraph(graph) {
     context.lineTo(x, height - padding);
     context.stroke();
   }
-  context.strokeStyle = "#adb5bd";
+  context.strokeStyle = isDarkMode() ? "#778391" : "#adb5bd";
   context.beginPath();
   context.moveTo(0, height / 2);
   context.lineTo(width, height / 2);
@@ -231,6 +262,9 @@ function updateGamepadVisuals(values, recordGraphs = true) {
   setIndicatorState(ui.buttonIndicators, buttons, "buttonBit");
   setIndicatorState(ui.dpadIndicators, dpad, "dpadBit");
   setIndicatorState(ui.miscIndicators, misc, "miscBit");
+  ui.buttonsHexValue.textContent = formatHexMask(buttons, 4);
+  ui.dpadHexValue.textContent = formatHexMask(dpad, 2);
+  ui.miscHexValue.textContent = formatHexMask(misc, 2);
   drawJoystick(ui.leftJoystick, leftX, leftY);
   drawJoystick(ui.rightJoystick, rightX, rightY);
   ui.leftJoystickXValue.textContent = leftX;
@@ -663,6 +697,9 @@ ui.graphZoomButtons.forEach((button) => {
 ui.gamepadDashboardEnabled.addEventListener("change", () => {
   setGamepadDashboardEnabled(ui.gamepadDashboardEnabled.checked);
 });
+ui.darkModeEnabled.addEventListener("change", () => {
+  setDarkMode(ui.darkModeEnabled.checked);
+});
 ui.useConnected.addEventListener("click", () => {
   ui.allowedMac.value = connectedMac;
   ui.macError.textContent = "";
@@ -676,6 +713,8 @@ ui.servoInputs.forEach((input) => input.addEventListener("input", () => { ui.ser
   input.addEventListener("input", () => { ui.i2cError.textContent = ""; });
 });
 ui.clearLog.addEventListener("click", () => { ui.log.textContent = ""; });
+
+setDarkMode(isDarkMode(), false);
 
 if (!("serial" in navigator)) {
   ui.support.textContent = "Web Serial is not supported. Use current Chrome or Edge on HTTPS or localhost.";
